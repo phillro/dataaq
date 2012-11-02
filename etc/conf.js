@@ -24,12 +24,11 @@ module.exports = {
         },
         jobRoot:__dirname + '../lib/jobs/',
         aws:{
-            s3:{
-                bucket:'ordrin_reports',
-                key:'uIY3ajIjqCrha0WNd8uJ+EY7YOVVIx++COwvkRmG',
-                secret:'AKIAI6FVVY7BU6GDGE3A'
-            }
+            accessKey:'AKIAJBMQ5STR5HGIHD4Q',
+            secretAccessKey:'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'
         },
+
+
         s3DataBucket:'skyfetch-data',
 
         proxyCloudList:[],
