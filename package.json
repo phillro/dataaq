@@ -1,0 +1,37 @@
+{
+    "name":"dataaq",
+    "version":"0.0.0",
+    "description":"ERROR: No README.md file found!",
+    "main":"index.js",
+    "scripts":{
+        "test":"echo \"Error: no test specified\" && exit 1"
+    },
+    "repository":{
+        "type":"git",
+        "url":"git@github.com:phillro/dataaq.git"
+    },
+    "author":"Phill Rosen",
+    "license":"BSD",
+    "dependencies":{
+
+        "cli":">=0.3.7",
+        "elasticsearchclient":">=0.01",
+        "geolib":">=1.1.7",
+        "mongoose":"=2.1.0",
+        "mongoose-types":">=1.0.3",
+        "node-geocode":">=0.2.0",
+        "node.io":">=0.4.0",
+        "querystring":">=0.0.4",
+        "cluster":">=0.7.0",
+        "xml2js":">= 0.0.1",
+        "async":">=0.0.1",
+        "node-extend":">=0.0.1",
+        "jquery":">=0.0.1",
+        "jsdom":">=0.0.1",
+        "knox":">0.0.1",
+        "venue-util":"git+ssh://git@github.com:ordrin/venue-util.git#stateintegration",
+        "redis":">0.0.1",
+        "node-uuid":">0.0.1"
+    }
+
+}
