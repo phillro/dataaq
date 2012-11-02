@@ -71,6 +71,7 @@ cli.main(function (args, options) {
                 console.log(results)
             }
             console.log('Yelp Search  Job Complete')
+            process.exit(1);
         })
     })
 
