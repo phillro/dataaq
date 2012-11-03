@@ -58,12 +58,48 @@ cli.main(function (args, options) {
 
     }
 
-    var i1 = {
-        find_desc:'restaurants',
-        find_loc:'10014',
-    }
+    var zones = [
+         {
+             find_desc:'restaurants',
+             find_loc:'10014',
+         },
+         {
+             find_desc:'restaurants',
+             find_loc:'10003',
+         },
+     /*    {
+             find_desc:'restaurants',
+             find_loc:'10011',
+         },
+         {
+             find_desc:'restaurants',
+             find_loc:'10004',
+         },
+         {
+             find_desc:'restaurants',
+             find_loc:'10009',
+         },
+         {
+             find_desc:'restaurants',
+             find_loc:'10002',
+         },
+         {
+             find_desc:'restaurants',
+             find_loc:'10038',
+         },
+         {
+             find_desc:'restaurants',
+             find_loc:'10005',
+         },
+         {
+             find_desc:'restaurants',
+             find_loc:'10280',
+         },*/
+     ];
 
-    yelpInputQueue.push(JSON.stringify(i1), function (err, res) {
+    async.forEach (zones,function(zone, callback){
+        yelpInputQueue.push(JSON.stringify(zone), callback);
+    },function(forEachError){
         nodeio.start(yelpSearchJob, {redisClient:redisClient}, function (err, results) {
             if (err) {
                 console.log(err)
@@ -73,6 +109,6 @@ cli.main(function (args, options) {
             console.log('Yelp Search  Job Complete')
             process.exit(1);
         })
-    })
+    });
 
 })
