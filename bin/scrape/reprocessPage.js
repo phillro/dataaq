@@ -20,7 +20,7 @@ var async = require('async'),
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
     config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
-    scrapeId:['s', 'scrape id to reprocess', 'string', '50948641dd7c284c31000055']
+    scrapeId:['s', 'scrape id to reprocess', 'string', '5096010583d463c34100000f']
 });
 
 cli.main(function (args, options) {
@@ -53,6 +53,9 @@ cli.main(function (args, options) {
                 switch (scrape.network) {
                     case 'yelp':
                         ProcessorMethods = require(conf.jobRoot + 'networks/yelp/YelpDetailsProcessor');
+                        break;
+                    case 'menupages':
+                        ProcessorMethods = require(conf.jobRoot + 'networks/menupages/DetailProcessor');
                         break;
                 }
                 if (ProcessorMethods) {
