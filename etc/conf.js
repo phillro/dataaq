@@ -22,7 +22,7 @@ module.exports = {
             "RestaurantMerged":"restaurants2"
           }
         },
-        jobRoot:__dirname + '../lib/jobs/',
+        jobRoot:__dirname + '/../lib/jobs/',
         aws:{
             accessKey:'AKIAJBMQ5STR5HGIHD4Q',
             secretAccessKey:'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'

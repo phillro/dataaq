@@ -67,7 +67,7 @@ cli.main(function (args, options) {
              find_desc:'restaurants',
              find_loc:'10003',
          },
-     /*    {
+         {
              find_desc:'restaurants',
              find_loc:'10011',
          },
@@ -94,7 +94,7 @@ cli.main(function (args, options) {
          {
              find_desc:'restaurants',
              find_loc:'10280',
-         },*/
+         },
      ];
 
     async.forEach (zones,function(zone, callback){
