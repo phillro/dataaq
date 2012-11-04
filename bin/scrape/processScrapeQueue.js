@@ -47,16 +47,19 @@ cli.main(function (args, options) {
                 if (job) {
                     async.waterfall([
                         function runJob(runJobCb) {
-                            var jobFile = require('../../lib/jobs/networks/' + job.network + '/' + job.type);
-                            var jobOptions = jobFile.options;
-                            var jobMethods = jobFile.methods;
+                            var NodeJob = require('../../lib/jobs/networks/' + job.network + '/' + job.type).NodeJob;
+                            var nodeJob = new NodeJob();
+                            var jobOptions = nodeJob.options;
+                            var jobMethods = nodeJob.jobMethods();
                             var nodeio = require('node.io');
                             var processScrapeQueueJob = new nodeio.Job(jobOptions, jobMethods);
                             processScrapeQueueJob.input = function (start, num, inCb) {
-                                if (job.input.length > 0) {
-                                    inCb([job.input.pop()]);
-                                } else {
-                                    inCb(false);
+                                if(job){
+                                    var inp=job;
+                                    job=false;
+                                    inCb([inp])
+                                }else{
+                                    inCb(false)
                                 }
                             }
 
