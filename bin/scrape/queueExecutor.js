@@ -15,11 +15,14 @@ var async = require('async'),
     cli = require('cli'),
     async = require('async'),
     redis = require('redis'),
-    VenueUtil = require('venue-util');
+    VenueUtil = require('venue-util'),
+    uuid = require('node-uuid');
 
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
-    config_path:['c', 'Config file path.', 'string', '../../etc/conf']
+    config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
+    max:['m', 'Max to run concurrently', 'number', 1],
+    jobqueuename:['q', 'Job queue name', 'string', 'menupagedetails']
 });
 
 cli.main(function (args, options) {
@@ -42,56 +45,78 @@ cli.main(function (args, options) {
     }});
 
     var redisClient = redis.createClient(conf.redis.port, conf.redis.host);
-    var jobQueue = new JobQueue('yelppagedetails', {redisClient:redisClient})
+    var jobQueue = new JobQueue(options.jobqueuename, {redisClient:redisClient})
+    var pids = [];
 
-    function processQueue(cb) {
+    function processQueue(pid, cb) {
         jobQueue.getNext(function (err, job) {
             if (err) {
-                cb(err);
+                cb(err, pid);
             } else {
                 if (job) {
-                    jobQueue.push(job);
-                    console.log(conf.jobRoot + job.baseJob);
-                    var NodeJobFactory = require(conf.jobRoot + job.baseJob);
-                    var options = {};
-                    if (job.processorMethods) {
+                    try {
+                        jobQueue.push(job);
+                        console.log(conf.jobRoot + job.baseJob);
+                        var NodeJobFactory = require(conf.jobRoot + job.baseJob);
+                        var options = {};
+
+                        console.log(conf.jobRoot + job.processorMethods);
                         var ProcessorMethods = require(conf.jobRoot + job.processorMethods);
                         if (ProcessorMethods.processingMethod) {
-                            options.processingMethod = ProcessorMethods.processingMethod
-                        }
-                        if (ProcessorMethods.updateScrapeMethod) {
-                            options.updateScrapeMethod = ProcessorMethods.updateScrapeMethod || false;
-                        }
-                        if (ProcessorMethods.postProcessingMethod) {
-                            options.postProcessingMethod = ProcessorMethods.postProcessingMethod || false;
-                        }
-                    }
-                    if (job.opts && job.opts.scrapeType) {
-                        options.scrapeType = job.opts.scrapeType;
-                    }
-                    if (job.opts && job.opts.jobQueueName) {
-                        options.jobQueueName = job.opts.jobQueueName;
-                    }
-                    if (job.opts && job.opts.proxyQueueName) {
-                        options.proxyQueueName = job.opts.proxyQueueName;
-                    }
+                            if (ProcessorMethods.processingMethod) {
+                                options.processingMethod = ProcessorMethods.processingMethod
+                            }
+                            if (ProcessorMethods.updateScrapeMethod) {
+                                options.updateScrapeMethod = ProcessorMethods.updateScrapeMethod || false;
+                            }
+                            if (ProcessorMethods.postProcessingMethod) {
+                                options.postProcessingMethod = ProcessorMethods.postProcessingMethod || false;
+                            }
 
-                    var nodeJob = NodeJobFactory.createJob([job], options)
-                    nodeio.start(nodeJob, {redisClient:redisClient, models:mongooseLayer.models}, function () {
-                        console.log('Process Scrape Queue Job Complete');
-                        cb(undefined)
-                    })
+                            if (job.opts && job.opts.scrapeType) {
+                                options.scrapeType = job.opts.scrapeType;
+                            }
+                            if (job.opts && job.opts.jobQueueName) {
+                                options.jobQueueName = job.opts.jobQueueName;
+                            }
+                            if (job.opts && job.opts.proxyQueueName) {
+                                options.proxyQueueName = job.opts.proxyQueueName;
+                            }
+
+                            var nodeJob = NodeJobFactory.createJob([job], options)
+                            nodeio.start(nodeJob, {redisClient:redisClient, models:mongooseLayer.models}, function () {
+                                console.log('Process Scrape Queue Job Complete');
+                                cb(undefined, pid)
+                            })
+                        } else {
+                            console.log('Skipping. No processorMethods')
+                            cb(undefined, pid)
+                        }
+                    } catch (ex) {
+                        //  jobQueue.push(job);
+                        console.log(ex.toString())
+                        cb(undefined, pid)
+                    }
                 } else {
-                    cb()
+                    cb(undefined, pid)
                 }
             }
         })
     }
 
     function runQueue() {
-        processQueue(function (err, res) {
-            setTimeout(runQueue, 500)
-        })
+        if (pids.length < options.max) {
+            while (pids.length < options.max) {
+                var pid = uuid.v1();
+                pids.push(pid);
+                processQueue(pid, function (err, pid) {
+                    pids.splice(pids.indexOf(pid), 1);
+                    runQueue()
+                })
+            }
+        } else {
+            setTimeout(runQueue(), 200);
+        }
     }
 
     runQueue();
