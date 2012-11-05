@@ -44,8 +44,15 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    mongooseLayer.models.Scrape.find({'data.name':{$exists:true}, 'data.address':{$exists:true}}, {'data.name':1,'data.address':1},  function (err, scrapes) {
-        async.forEach(scrapes, function (scrape, forEachCallback) {
+    function stripAlphaChars(pstrSource) {
+        var m_strOut = new String(pstrSource);
+        m_strOut = m_strOut.replace(/[^0-9]/g, '');
+
+        return m_strOut;
+    }
+
+    mongooseLayer.models.Scrape.find({'data.name':{$exists:true}, 'data.address':{$exists:true}}, function (err, scrapes) {
+        async.forEachLimit(scrapes, 20, function (scrape, forEachCallback) {
             async.waterfall([
                 function createMetaPhones(cb) {
                     var nameStems = mindex.stem(mindex.stripStopWords(mindex.words(scrape.data.name.toString()), nameStopWords));
@@ -62,8 +69,15 @@ cli.main(function (args, options) {
                         meta_phones:addrMetaphones,
                         stemmed_words:addrStems
                     }
+
+                    if(scrape.data.phone){
+                        scrape.data.norm_phone=stripAlphaChars(scrape.data.phone);
+                    }
+
                     scrape.markModified('data');
-                    scrape.save(cb);
+                    scrape.save(function (err, scrapeResult) {
+                        cb(err, scrapeResult);
+                    });
 
                 }
             ],
