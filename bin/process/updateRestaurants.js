@@ -58,7 +58,15 @@ cli.main(function (args, options) {
         'cuisine',
         'menuJson',
         'priceString'
-    ]
+    ];
+
+    var unattributedFields = {
+        'neighborhoods':'neighborhoods',
+        'tags':'categories',
+        'website':'website',
+        'email':'email',
+        'zip':'postal_code'
+    }
 
     mongooseLayer.models.RestaurantMerged.find({}, {}, {sort:{updatedAt:-1}, limit:50}, function (err, restaurants) {
         async.forEachLimit(restaurants, 5, function (restaurant, forEachRestaurantCallback) {
@@ -76,14 +84,14 @@ cli.main(function (args, options) {
                             networkMap[scrape.network] = scrape;
                         } else {
                             //Take the scrape with the most reviews, otherwise most recent
-                            if (networkMap[scrape.network].reviews && scrape.reviews) {
-                                if (networkMap[scrape.network].reviews.length == scrape.reviews.length) {
+                            if (networkMap[scrape.network].reviews && scrape.data.reviews) {
+                                if (networkMap[scrape.network].reviews.length == scrape.data.reviews.length) {
                                     networkMap[scrape.network] = networkMap[scrape.network].createdAt.getTime() > scrape.createdAt.getTime() ? networkMap[scrape.network] : scrape;
                                 } else {
-                                    networkMap[scrape.network] = networkMap[scrape.network].reviews.length > scrape.reviews.length ? networkMap[scrape.network] : scrape;
+                                    networkMap[scrape.network] = networkMap[scrape.network].reviews.length > scrape.data.reviews.length ? networkMap[scrape.network] : scrape;
                                 }
                             } else {
-                                if (scrape.reviews) {
+                                if (scrape.data.reviews) {
                                     networkMap[scrape.network] = scrape;
                                 } else {
                                     networkMap[scrape.network] = networkMap[scrape.network].createdAt.getTime() > scrape.createdAt.getTime() ? networkMap[scrape.network] : scrape;
@@ -128,6 +136,18 @@ cli.main(function (args, options) {
                             }
                         }
 
+                        for (var field in unattributedFields) {
+                            if (network.data[field]) {
+                                if (!restaurant._doc[field]) {
+                                    restaurant._doc[unattributedFields[field]] = network.data[field];
+                                }
+                            }
+                        }
+
+                        if(network.data.closed){
+                            restaurant.closed=true;
+                        }
+
                         forEachSeriesCb(undefined);
                     }, function (forEachError) {
                         cb(forEachError, networks, networkMap);
@@ -137,12 +157,17 @@ cli.main(function (args, options) {
                     restaurant.reviews = [];
                     for (var i = 0; i < networks.length; i++) {
                         var network = networks[i];
-                        var networkAttribution = new Attribution(network.network, network.data.url, network.createdAt, network._id);
-                        for (var j = 0; j < networks.reviews.length; j++) {
-                            var review = networks[j];
-                            review.attribution = new Attribution(network.network, network.data.url, network.createdAt, network._id);
-                            restaurant.reviews.push(review);
+                        if (network.data.reviews) {
+                            var networkAttribution = new Attribution(network.network, network.data.url, network.createdAt, network._id);
+                            for (var j = 0; j < network.data.reviews.length; j++) {
+                                var review = network.data.reviews[j];
+                                review.attribution = networkAttribution;
+                                restaurant.reviews.push(review);
+                            }
                         }
+                    }
+                    if (!networkAttribution) {
+                        networkAttribution = [];
                     }
                     restaurant.reviews = restaurant.reviews.sort(function (a, b) {
                         if (a.dtreviewed && b.dtreviewed) {
@@ -156,6 +181,7 @@ cli.main(function (args, options) {
                         }
                     })
                     restaurant.reviews_count = restaurant.reviews.length;
+                    cb(undefined, networks, networkMap)
                 },
                 function updateRatings(networks, networkMap, cb) {
                     var ratingTotal = 0;
@@ -163,29 +189,49 @@ cli.main(function (args, options) {
                     var rating = false;
                     restaurant.ratings = [];
                     for (var i = 0; i < networks.length; i++) {
-                        if (networks[i].rating) {
+                        var network = networks[i];
+                        if (network.data.rating) {
                             try {
-                                ratingTotal += parseFloat(networks[i].rating);
+                                ratingTotal += parseFloat(network.data.rating);
                                 restaurant.ratings.push({
-                                    rating:networks[i].rating,
+                                    rating:network.data.rating,
                                     attribution:new Attribution(network.network, network.data.url, network.createdAt, network._id)
                                 })
                                 ratingCount++;
                             } catch (ex) {
-
+                                console.log(ex);
                             }
                         }
                     }
-                    if (ratingCount > 0) {
+                    if (ratingCount) {
                         rating = ratingTotal / ratingCount;
+                        restaurant.ratings_count = ratingCount;
+                        restaurant.average_rating = rating;
                     }
-                    restaurant.ratings_count = ratingCount;
-                    restaurant.average_rating = rating;
+
+                    cb(undefined, networks, networkMap);
+                },
+                function updateRestaurantNetworks(networks, networkMap, cb) {
+                    restaurant.network_ids = [];
+                    for (var i = 0; i < networks.length; i++) {
+                        var network = networks[i];
+                        restaurant.network_ids.push({
+                            name:network.network,
+                            id:network._id,
+                            scrapedAt:network.createdAt
+                        });
+                    }
+                    restaurant.source_count = restaurant.network_ids.length;
                     cb(undefined, networks, networkMap);
                 },
                 function saveRestaurant(networks, networkMap, cb) {
-                    restaurant.markModified('features');
+                    /*restaurant.markModified('features');
                     restaurant.markModified('feature_attributions');
+                    restaurant.save(function (err, restSaveRes) {
+                        cb(err, restSaveRes);
+                    })*/
+                    cb(undefined,{});
+
                 }
             ], function (waterfallError, results) {
                 forEachRestaurantCallback(waterfallError)
