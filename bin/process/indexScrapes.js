@@ -60,6 +60,7 @@ cli.main(function (args, options) {
 
                     var addrStems = mindex.stem(mindex.stripStopWords(mindex.words(scrape.data.address.toString()), addressStopwords));
                     var addrMetaphones = mindex.metaphoneArray(addrStems);
+                    scrape.data.name=scrape.data.name.replace('Golden UnicornBest of Citysearch Winner','');
                     scrape.data.name_meta = {
                         meta_phones:nameMetaphones,
                         stemmed_words:nameStems

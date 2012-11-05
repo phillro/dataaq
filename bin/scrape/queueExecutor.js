@@ -22,7 +22,7 @@ cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
     config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
     max:['m', 'Max to run concurrently', 'number', 5],
-    jobqueuename:['q', 'Job queue name', 'string', 'yelppagedetails']
+    jobqueuename:['q', 'Job queue name', 'string', 'default']
 });
 
 cli.main(function (args, options) {
