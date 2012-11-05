@@ -42,26 +42,59 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    mongooseLayer.models.Scrape.find({'data.name_meta':{$exists:true},'data.address_meta':{$exists:true}},{},{limit:10}, function (err, scrapes) {
-        async.forEachLimit(scrapes,20, function (scrape, forEachCallback) {
-            async.waterfall ([
-                function findLocation(cb){
-                    mongooseLayer.models.RestaurantMerged.find({name_meta:data.name_meta,addr_meta:data.address_meta},function(err,rest){
+    var checked = 0;
+    var nameAddrFound = 0;
+    var namePhoneFound = 0;
+    mongooseLayer.models.Scrape.find({'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}},{},{sort:{createdAt:-1}}, function (err, scrapes) {
+        //mongooseLayer.models.Scrape.find({'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}}, function (err, scrapes) {
+            async.forEachLimit(scrapes, 20, function (scrape, forEachCallback) {
+                async.waterfall([
+                   /* function findLocationByNameAndAdd(cb) {
+                        checked++;
+                        mongooseLayer.models.RestaurantMerged.find({name_meta:scrape.data.name_meta, addr_meta:scrape.data.address_meta}, {}, {createdAt:-1}, function (err, restaurants) {
+                            if (restaurants.length > 0) {
+                                nameAddrFound++;
+                                scrape.locationId = restaurants[0]._id;
+                                scrape.save(function (err, savedScrape) {
+                                    cb(err);
+                                });
+                            }
+                            else {
+                                cb(undefined,scrape);
+                            }
+                        })
+                    },*/
+                    function findLocationByNameAndPhone(cb) {
+                        if (!scrape.locationId) {
+                            mongooseLayer.models.RestaurantMerged.find({name_meta:scrape.data.name_meta, norm_phone:scrape.data.norm_phone}, {}, {createdAt:-1}, function (err, restaurants) {
+                                if (restaurants.length > 0) {
+                                    namePhoneFound++;
+                                    scrape.locationId = restaurants[0]._id;
+                                    scrape.save(function (err, savedScrape) {
+                                        cb(err, restaurants, savedScrape);
+                                    });
+                                }
+                                else {
+                                    cb(err, restaurants);
+                                }
+                            })
+                        } else {
+                            cb(undefined, scrape);
+                        }
+                    }
+                ], function (waterfallError, results) {
+                    forEachCallback(waterfallError)
+                })
 
-                        cb(err,rest);
-                    })
+            }, function (forEachError) {
+                if (err) {
+                    console.log(err);
                 }
-            ],function(waterfallError, results){
-                forEachCallback(waterfallError)
-            })
+                console.log('done. ' + nameAddrFound+','+namePhoneFound + '/' + checked);
+                process.exit(1);
+            });
+        }
 
-        }, function (forEachError) {
-            if (err) {
-                console.log(err);
-            }
-            console.log('done.');
-            process.exit(1);
-        });
-    })
+    )
 
 })
