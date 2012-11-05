@@ -21,8 +21,8 @@ var async = require('async'),
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
     config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
-    max:['m', 'Max to run concurrently', 'number', 1],
-    jobqueuename:['q', 'Job queue name', 'string', 'menupagedetails']
+    max:['m', 'Max to run concurrently', 'number', 3],
+    jobqueuename:['q', 'Job queue name', 'string', 'insiderpagesdetails']
 });
 
 cli.main(function (args, options) {
@@ -55,7 +55,7 @@ cli.main(function (args, options) {
             } else {
                 if (job) {
                     try {
-                        jobQueue.push(job);
+                        //jobQueue.push(job);
                         console.log(conf.jobRoot + job.baseJob);
                         var NodeJobFactory = require(conf.jobRoot + job.baseJob);
                         var options = {};
@@ -93,7 +93,7 @@ cli.main(function (args, options) {
                             cb(undefined, pid)
                         }
                     } catch (ex) {
-                        //  jobQueue.push(job);
+                        jobQueue.push(job);
                         console.log(ex.toString())
                         cb(undefined, pid)
                     }
