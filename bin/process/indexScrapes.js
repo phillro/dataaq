@@ -19,7 +19,7 @@ var nameStopWords = require('../../lib/nameStopwords.js'),
     mindex = require('../../lib/mindex.js');
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
-    config_path:['c', 'Config file path.', 'string', '../etc/conf']
+    config_path:['c', 'Config file path.', 'string', '../../etc/conf']
 });
 
 cli.main(function (args, options) {
@@ -44,7 +44,7 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    mongooseLayer.models.Scrape.find({'data.name':{$exists:true},'data.address':{$exists:true}}, function (err, scrapes) {
+    mongooseLayer.models.Scrape.find({'data.name':{$exists:true}, 'data.address':{$exists:true}}, {'data.name':1,'data.address':1},  function (err, scrapes) {
         async.forEach(scrapes, function (scrape, forEachCallback) {
             async.waterfall([
                 function createMetaPhones(cb) {
@@ -58,17 +58,13 @@ cli.main(function (args, options) {
                         stemmed_words:nameStems
                     }
 
-                    scrape.data.address = {
+                    scrape.data.address_meta = {
                         meta_phones:addrMetaphones,
                         stemmed_words:addrStems
                     }
-                    cb(undefined);
+                    scrape.markModified('data');
+                    scrape.save(cb);
 
-                },
-                function saveScrape(scrape, cb) {
-                    //scrape.save(function (err, savedVenue) {
-                    cb(err, {});
-                    //});
                 }
             ],
                 function (waterfallError, results) {

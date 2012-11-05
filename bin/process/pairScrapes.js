@@ -17,7 +17,7 @@ var cli = require('cli'),
 
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
-    config_path:['c', 'Config file path.', 'string', '../etc/conf']
+    config_path:['c', 'Config file path.', 'string', '../../etc/conf']
 });
 
 cli.main(function (args, options) {
@@ -42,12 +42,17 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    mongooseLayer.models.Scrape.find({}, function (err, scrapes) {
-        async.forEach(scrapes, function (scrape, callback) {
+    mongooseLayer.models.Scrape.find({'data.name_meta':{$exists:true},'data.address_meta':{$exists:true}},{},{limit:10}, function (err, scrapes) {
+        async.forEachLimit(scrapes,20, function (scrape, forEachCallback) {
             async.waterfall ([
+                function findLocation(cb){
+                    mongooseLayer.models.RestaurantMerged.find({name_meta:data.name_meta,addr_meta:data.address_meta},function(err,rest){
 
+                        cb(err,rest);
+                    })
+                }
             ],function(waterfallError, results){
-
+                forEachCallback(waterfallError)
             })
 
         }, function (forEachError) {
