@@ -49,7 +49,7 @@ cli.main(function (args, options) {
         //mongooseLayer.models.Scrape.find({'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}}, function (err, scrapes) {
             async.forEachLimit(scrapes, 20, function (scrape, forEachCallback) {
                 async.waterfall([
-                   /* function findLocationByNameAndAdd(cb) {
+                   function findLocationByNameAndAdd(cb) {
                         checked++;
                         mongooseLayer.models.RestaurantMerged.find({name_meta:scrape.data.name_meta, addr_meta:scrape.data.address_meta}, {}, {createdAt:-1}, function (err, restaurants) {
                             if (restaurants.length > 0) {
@@ -60,12 +60,12 @@ cli.main(function (args, options) {
                                 });
                             }
                             else {
-                                cb(undefined,scrape);
+                                cb(undefined);
                             }
                         })
-                    },*/
+                    },
                     function findLocationByNameAndPhone(cb) {
-                        if (!scrape.locationId) {
+                        if (scrape.data&&!scrape.locationId) {
                             mongooseLayer.models.RestaurantMerged.find({name_meta:scrape.data.name_meta, norm_phone:scrape.data.norm_phone}, {}, {createdAt:-1}, function (err, restaurants) {
                                 if (restaurants.length > 0) {
                                     namePhoneFound++;
