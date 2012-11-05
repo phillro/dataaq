@@ -14,6 +14,7 @@ var cli = require('cli'),
     mongoose = require('mongoose'),
     JobQueue = require('../../lib/JobQueue').JobQueue,
     Job = require('../../lib/JobQueue').Job,
+    Comparer = require('../../lib/Comparer'),
     natural = require('natural');
 
 cli.parse({
@@ -44,93 +45,34 @@ cli.main(function (args, options) {
     }});
 
     var checked = 0;
+    var found = 0;
     var nameAddrFound = 0;
     var namePhoneFound = 0;
     var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
-    var query ={'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}, 'data.zip':{$in:zips}};
+    var query = {'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}, 'data.zip':{$in:zips}};
     mongooseLayer.models.Scrape.find(query, {}, {sort:{createdAt:-1}}, function (err, scrapes) {
             //mongooseLayer.models.Scrape.find({'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}}, function (err, scrapes) {
             async.forEachLimit(scrapes, 20, function (scrape, forEachCallback) {
+                checked++;
                 async.waterfall([
-                    function findLocationByNameAndAdd(cb) {
-                        checked++;
-                        mongooseLayer.models.RestaurantMerged.find({name_meta:scrape.data.name_meta, addr_meta:scrape.data.address_meta, enabled:{$ne:false}}, {}, {createdAt:-1}, function (err, restaurants) {
-                            if (restaurants.length > 0) {
-                                scrape.pair_reason = 'Name and Address Match.';
-                                nameAddrFound++;
-                                scrape.locationId = restaurants[0]._id;
-                                scrape.rename_candidate = false;
-                                scrape.save(function (err, savedScrape) {
-                                    cb(err);
-                                });
+                    function suggestExisting(cb) {
+                        Comparer.suggestRestaurant(mongooseLayer, scrape, function (err, scrape, existingRestaurant, reason) {
+                            if (existingRestaurant) {
+                                found++;
                             }
-                            else {
-                                cb(undefined);
-                            }
+                            cb(err, scrape, existingRestaurant, reason);
                         })
                     },
-                    function findLocationByNameAndPhone(cb) {
-                        if (scrape.data && !scrape.locationId && scrape.data.norm_phone && scrape.data.norm_phone.trim().length >= 7) {
-                            mongooseLayer.models.RestaurantMerged.find({name_meta:scrape.data.name_meta, norm_phone:scrape.data.norm_phone, enabled:{$ne:false}}, {}, {createdAt:-1}, function (err, restaurants) {
-                                if (restaurants.length > 0) {
-                                    scrape.pair_reason = 'Name and Phone Match.';
-                                    namePhoneFound++;
-                                    scrape.locationId = restaurants[0]._id;
-                                    scrape.rename_candidate = false;
-                                    scrape.save(function (err, savedScrape) {
-                                        cb(err, restaurants, savedScrape);
-                                    });
-                                }
-                                else {
-                                    cb(err, restaurants);
-                                }
+                    function pair(scrape,restaurant,reason,cb){
+                        if(scrape&&restaurant){
+                            scrape.reason = reason;
+                            scrape.locationId = restaurant._id;
+                            console.log('Pairing '+scrape._id+' to '+restaurant._id);
+                            scrape.save(function(err,scrape){
+                                cb(err, scrape, restaurant, reason);
                             })
-                        } else {
-                            cb(undefined);
-                        }
-                    },
-                    function findLocationByPhone(cb) {
-                        if (scrape.data && !scrape.locationId && scrape.data.norm_phone && scrape.data.norm_phone.trim().length >= 7) {
-                            mongooseLayer.models.RestaurantMerged.find({norm_phone:scrape.data.norm_phone, enabled:{$ne:false}}, {}, {createdAt:-1}, function (err, restaurants) {
-                                if (restaurants.length > 0) {
-                                    var candidate = restaurants[0];
-                                    var scrapeMetaName = '';
-                                    var candidateMetaName = '';
-                                    for (var i = 0; i < candidate.name_meta.meta_phones.length; i++) {
-                                        if (i > 0) {
-                                            candidateMetaName += ' ';
-                                        }
-                                        candidateMetaName += candidate.name_meta.meta_phones[i];
-                                    }
-
-                                    for (var i = 0; i < scrape.data.name_meta.meta_phones.length; i++) {
-                                        if (i > 0) {
-                                            scrapeMetaName += ' ';
-                                        }
-                                        scrapeMetaName += scrape.data.name_meta.meta_phones[i];
-                                    }
-
-                                    var similairity = natural.JaroWinklerDistance(candidateMetaName, scrapeMetaName)
-                                    if (similairity > .75) {
-                                        scrape.pair_reason = 'Phone Match. Name similairity exceeds .75';
-                                        scrape.rename_candidate = false;
-                                        namePhoneFound++;
-                                        scrape.locationId = restaurants[0]._id;
-
-                                    } else {
-                                        scrape.rename_candidate = true;
-                                    }
-                                    scrape.save(function (err, savedScrape) {
-                                        cb(err, restaurants, {});
-                                    });
-
-                                }
-                                else {
-                                    cb(err, restaurants);
-                                }
-                            })
-                        } else {
-                            cb(undefined, []);
+                        }else{
+                            cb(err, scrape, false, false);
                         }
                     }
                 ], function (waterfallError, results) {
@@ -141,7 +83,7 @@ cli.main(function (args, options) {
                 if (err) {
                     console.log(err);
                 }
-                console.log('done. ' + nameAddrFound + ',' + namePhoneFound + '/' + checked);
+                console.log('done. ' + found + '/' + checked);
                 process.exit(1);
             });
         }
