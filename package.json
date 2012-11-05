@@ -31,7 +31,8 @@
         "knox":">0.0.1",
         "venue-util":"git+ssh://git@github.com:ordrin/venue-util.git#stateintegration",
         "redis":">0.0.1",
-        "node-uuid":">0.0.1"
+        "node-uuid":">0.0.1",
+        "natural":">0.0.1"
     }
 
 }
