@@ -13,7 +13,10 @@ var cli = require('cli'),
     ProxyQueue = require('../lib/ProxyQueue').ProxyQueue,
     mongoose = require('mongoose'),
     JobQueue = require('../lib/JobQueue').JobQueue,
-    Job = require('../lib/JobQueue').Job
+    Job = require('../lib/JobQueue').Job;
+var nameStopWords = require('../lib/nameStopwords.js'),
+    addressStopwords = require('../lib/addressStopwords.js'),
+    mindex = require('../lib/mindex.js');
 
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
@@ -49,14 +52,36 @@ cli.main(function (args, options) {
         return m_strOut;
     }
 
+    function createMetaObj(baseString, stopWords) {
+        baseString = baseString.trim();
+        var result = {};
+        if (baseString.length > 0) {
+            var words = mindex.words(baseString);
+            var wordsStopStripped = mindex.stripStopWords(words, stopWords);
+            if (wordsStopStripped.length > 0) {
+                var wordStems = mindex.stem(wordsStopStripped);
+                result.meta_phones = mindex.metaphoneArray(wordStems);
+                result.stemmed_Words = wordStems;
+            } else {//If its only stop words, we are gonna use the full set of those.
+                result.meta_phones = words;
+                result.stemmed_words = mindex.stem(words);
+            }
+        }
+        return result;
+
+    }
+
+    //mongooseLayer.models.RestaurantMerged.find({_id:'4fdb767ee0795a6846ed9f8c'}, function (err, restaurants) {
     mongooseLayer.models.RestaurantMerged.find({}, function (err, restaurants) {
         async.forEachLimit(restaurants, 20, function (restaurant, callback) {
-            if (restaurant.restaurant_phone) {
-                restaurant.norm_phone = stripAlphaChars(restaurant.restaurant_phone);
-                restaurant.save(callback);
-            }else{
-                callback();
+            restaurant.name_meta = restaurant.name ? createMetaObj(restaurant.name, nameStopWords) : null;
+            restaurant.addr_meta = restaurant.addr ? createMetaObj(restaurant.addr, addressStopwords) : null;
+            restaurant.norm_phone = restaurant.restaurant_phone && restaurant.restaurant_phone.trim().length >= 7 ? stripAlphaChars(restaurant.restaurant_phone) : null;
+            if (!restaurant.name_meta) {
+                restaurant.enabled = false;
             }
+
+            restaurant.save(callback);
 
         }, function (forEachError) {
             if (err) {
