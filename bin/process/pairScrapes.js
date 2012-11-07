@@ -44,50 +44,66 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    var checked = 0;
-    var found = 0;
-    var nameAddrFound = 0;
-    var namePhoneFound = 0;
+
+
     var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
     var query = {'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}, 'data.zip':{$in:zips}};
-    mongooseLayer.models.Scrape.find(query, {}, {sort:{createdAt:-1}}, function (err, scrapes) {
-            //mongooseLayer.models.Scrape.find({'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}}, function (err, scrapes) {
-            async.forEachLimit(scrapes, 20, function (scrape, forEachCallback) {
-                checked++;
-                async.waterfall([
-                    function suggestExisting(cb) {
-                        Comparer.suggestRestaurant(mongooseLayer, scrape, function (err, scrape, existingRestaurant, reason) {
-                            if (existingRestaurant) {
-                                found++;
-                            }
-                            cb(err, scrape, existingRestaurant, reason);
-                        })
-                    },
-                    function pair(scrape,restaurant,reason,cb){
-                        if(scrape&&restaurant){
-                            scrape.reason = reason;
-                            scrape.locationId = restaurant._id;
-                            console.log('Pairing '+scrape._id+' to '+restaurant._id);
-                            scrape.save(function(err,scrape){
-                                cb(err, scrape, restaurant, reason);
+
+    function getScrapes(start, num, cb) {
+        mongooseLayer.models.Scrape.find(query, {}, {skip:start, limit:num, sort:{createdAt:-1}}, function (err, scrapes) {
+            cb(err, scrapes);
+        })
+    }
+
+    var done = 0;
+    var pageSize = 100;
+    var checked = 0;
+        var found = 0;
+    mongooseLayer.models.Scrape.count(query, function (err, total) {
+        async.whilst(function () {
+            return done < total - 1;
+        }, function (wCb) {
+            getScrapes(done, pageSize, function (err, scrapes) {
+                async.forEachLimit(scrapes, 20, function (scrape, forEachCallback) {
+                    checked++;
+                    async.waterfall([
+                        function suggestExisting(cb) {
+                            Comparer.suggestRestaurant(mongooseLayer, scrape, function (err, scrape, existingRestaurant, reason) {
+                                if (existingRestaurant) {
+                                    found++;
+                                }
+                                cb(err, scrape, existingRestaurant, reason);
                             })
-                        }else{
-                            cb(err, scrape, false, false);
+                        },
+                        function pair(scrape, restaurant, reason, cb) {
+                            if (scrape && restaurant) {
+                                scrape.reason = reason;
+                                scrape.locationId = restaurant._id;
+                                console.log('Pairing ' + scrape._id + ' to ' + restaurant._id);
+                                scrape.save(function (err, scrape) {
+                                    cb(err, scrape, restaurant, reason);
+                                })
+                            } else {
+                                cb(err, scrape, false, false);
+                            }
                         }
-                    }
-                ], function (waterfallError, results) {
-                    forEachCallback(waterfallError)
-                })
+                    ], function (waterfallError, results) {
+                        done++;
+                        forEachCallback(waterfallError);
+                    })
 
-            }, function (forEachError) {
-                if (err) {
-                    console.log(err);
-                }
-                console.log('done. ' + found + '/' + checked);
-                process.exit(1);
-            });
-        }
-
-    )
+                }, function (forEachError) {
+                    console.log('Completed '+done);
+                    wCb(forEachError);
+                });
+            })
+        }, function (wError) {
+            if (wError) {
+                console.log(wError);
+            }
+            console.log('done. ' + found + '/' + checked);
+            process.exit(1);
+        })
+    })
 
 })

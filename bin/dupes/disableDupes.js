@@ -38,7 +38,8 @@ cli.main(function (args, options) {
             throw 'Config file not found';
         }
 
-        mongooseLayer.models.RestaurantMerged.find({dupe_ids_count:{$gt:1}}, {dupe_ids:1}, {}, function (err, venues) {
+        //mongooseLayer.models.RestaurantMerged.find({_id:"4fdb771ce0795a6846ee7acf"}, {}, {}, function (err, venues) {
+        mongooseLayer.models.RestaurantMerged.find({}, {}, {}, function (err, venues) {
             async.forEachLimit(venues, 1, function (venue, forEachVenueCb) {
                 async.waterfall([
                     function getCanditates(cb) {
@@ -52,12 +53,19 @@ cli.main(function (args, options) {
                     function enableSelected(selectedVenue, candidates, cb) {
                         if (selectedVenue) {
                             selectedVenue.enabled = true;
+                            selectedVenue.deduped_id=null;
                             selectedVenue.save(function (err, savedVenue) {
                                 cb(err, savedVenue, candidates);
                             });
                         } else {
+                            //no dupes, enable it
+                            venue.enabled=!venue.closed ? true:false;
+                            venue.deduped_id=null;
                             console.log('No selected venues for ' + venue._id + ' ' + candidates.length)
-                            cb(err, false, candidates);
+                                venue.save(function(err,savedVenue){
+                                    cb(err, savedVenue, candidates);
+                                })
+
 
                         }
                     },

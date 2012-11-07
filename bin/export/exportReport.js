@@ -28,31 +28,37 @@ cli.main(function (args, options) {
         if (!conf) {
             throw 'Config file not found';
         }
-        var fields = {
-            name:1,
-            addr:1,
-            state:1,
-            postal_code:1,
-            phone:1,
-            website:1,
-            average_rating:1,
-            ratings_count:1,
-            reviews_count:1,
-            feature_count:1,
-            source_count:1,
-            has_feature_menu:1,
-            geo:1,
-            'name_meta.meta_phones':1,
-            'addr_meta.meta_phones':1,
-            dupe_ids:1,
-            dupe_ids_count:1}
+        var fields = {}
 
         console.log('Writing to ' + options.outputFile);
+        var headerRow = [
+            '_id',
+            'name',
+            'enabled',
+            'deduped_id',
+            'name meta phones',
+            'address',
+            'address meta phones',
+            'city',
+            'state',
+            'postal code',
+            'phone',
+            'website',
+            'averate rating',
+            'rating count',
+            'review count',
+            'feature count',
+            'source count',
+            'geo',
+            'dupe count',
+            'dupe ids'
+        ];
+        var rows = [headerRow];
         async.waterfall([
             function getRestaurants(cb) {
-                mongooseLayer.models.RestaurantMerged.find({enabled:true,closed:{$ne:true}}, fields,
+                mongooseLayer.models.RestaurantMerged.find({closed:{$ne:true}}, fields,
                     {sort:{name:-1}}, function (err, venues) {
-                        var rows = [];
+
                         for (var i = 0; i < venues.length; i++) {
                             var venue = venues[i];
                             var geoField = venue.geo && venue.geo.lat && venue.geo.lon ? venue.geo.lat + ',' + venue.geo.lon : 'undefined';
@@ -72,13 +78,15 @@ cli.main(function (args, options) {
                             rows.push([
                                 venue._id.toString(),
                                 venue.name,
-                                venue.name_meta.meta_phones.toString(),
+                                venue.enabled?'true':'false',
+                                venue.deduped_id?venue.deduped_id.toString():'',
+                                venue.name_meta.meta_phones?venue.name_meta.meta_phones.toString():'',
                                 venue.addr,
-                                venue.addr_meta.meta_phones.toString(),
-                                venue.addr,
-                                venue.state,
+                                venue.addr_meta.meta_phones?venue.addr_meta.meta_phones.toString():'',
+                                venue.city,
+                                venue.statecode,
                                 venue.postal_code,
-                                venue.phone,
+                                venue.restaurant_phone,
                                 venue.website,
                                 venue.average_rating?venue.average_rating.toString():-1,
                                 venue.ratings_count?venue.ratings_count.toString():0,
