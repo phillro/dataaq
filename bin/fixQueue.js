@@ -38,17 +38,14 @@ cli.main(function (args, options) {
     }
 
     var redisClient = redis.createClient(conf.redis.port, conf.redis.host);
-    var total = 11393;
+    var total = 5000;
     var done = 0;
-    var jobQueue = new JobQueue('yelppagedetails', {redisClient:redisClient})
+    var jobQueue = new JobQueue('nymagreviews', {redisClient:redisClient})
     async.whilst(function(){
         return done<=total;
     },function(cb){
         jobQueue.getNext(function(err,job){
-            job.type='yelpDetails';
-            job.baseJob='networks/internal/defaultPageScraper';
-            job.processorMethods='networks/yelp/YelpDetailsProcessor';
-            job.opts.jobQueueName = 'yelppagedetails';
+            job.input[0]= job.input[0].replace('/index.html','/?sort=recent');
             done++;
             jobQueue.push(job,cb);
         })

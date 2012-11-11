@@ -77,16 +77,48 @@ cli.main(function (args, options) {
         })
     }
 
-    mongooseLayer.models.RestaurantMerged.count({},function (err, total) {
+    function handleFeatureField(field, restaurant, network) {
+        var dataField;
+
+        if (field == 'features') {
+            var features = network.data[field];
+            for (var f2 in features) {
+                restuarant = handleFeatureField(f2, restaurant, network);
+            }
+        } else {
+            if (!restaurant.features[field]&&network.data[field]) {
+                //console.log(restaurant._id);
+                restaurant.features[field] = network.data[field];
+                restaurant.feature_attributions.push({
+                    attribution:new Attribution(network.network, network.data.url, network.createdAt, network._id),
+                    field_name:field
+                })
+                var t = 1;
+            } else {
+                for (var j = 0; j < restaurant.feature_attributions.length; j++) {
+                    if (restaurant.feature_attributions[j].field_name == field) {
+                        if (restaurant.feature_attributions[j].attribution.date.getTime < network.createdAt.getTime()) {
+                            restaurant.features[field] = network.data[field];
+                            restaurant.feature_attributions[j].attribution = new Attribution(network.network, network.data.url, network.createdAt, network._id)
+                        }
+                    }
+                }
+            }
+        }
+        return restaurant;
+
+    }
+
+    mongooseLayer.models.RestaurantMerged.count({}, function (err, total) {
         async.whilst(function () {
-            return done < total-1;
+            return done < total - 1;
         }, function (wCb) {
             getRestaurants(done, pageSize, function (err, restaurants) {
                 async.forEachLimit(restaurants, 5, function (restaurant, forEachRestaurantCallback) {
                     async.waterfall([
                         function getScrapes(cb) {
                             console.log(restaurant._id);
-                            mongooseLayer.models.Scrape.find({locationId:restaurant._id}, {}, {limit:5,sort:{createdAt:-1}}, function (err, scrapes) {
+                            mongooseLayer.models.Scrape.find({locationId:restaurant._id}, {}, {limit:5, sort:{createdAt:-1}}, function (err, scrapes) {
                                 cb(err, scrapes);
                             })
                         },
@@ -133,29 +165,16 @@ cli.main(function (args, options) {
                                         if (field == 'menuJson') {
                                             restaurant.hasFeatureMenu = true;
                                         }
-                                        if (!restaurant.features[field]) {
-                                            restaurant.features[field] = network.data[field];
-                                            restaurant.feature_attributions.push({
-                                                attribution:new Attribution(network.network, network.data.url, network.createdAt, network._id),
-                                                field_name:field
-                                            })
-                                            var t = 1;
-                                        } else {
-                                            for (var j = 0; j < restaurant.feature_attributions.length; j++) {
-                                                if (restaurant.feature_attributions[j].field_name == field) {
-                                                    if (restaurant.feature_attributions[j].attribution.date.getTime < network.createdAt.getTime()) {
-                                                        restaurant.features[field] = network.data[field];
-                                                        restaurant.feature_attributions[j].attribution = new Attribution(network.network, network.data.url, network.createdAt, network._id)
-                                                    }
-                                                }
-                                            }
-                                        }
+
                                     }
+                                    restaurant = handleFeatureField(field,restaurant,network);
                                 }
+
+
 
                                 for (var field in unattributedFields) {
                                     if (network.data[field]) {
-                                        if (!restaurant._doc[field]) {
+                                        if (!restaurant._doc[field]&& network.data[field]) {
                                             restaurant._doc[unattributedFields[field]] = network.data[field];
                                             restaurant.markModified(unattributedFields[field]);
                                         }
@@ -227,11 +246,11 @@ cli.main(function (args, options) {
                                 rating = ratingTotal / ratingCount;
                                 restaurant.ratings_count = ratingCount;
                                 restaurant.average_rating = rating;
-                            }else{
-                                restaurant.average_rating=-1;
+                            } else {
+                                restaurant.average_rating = -1;
                             }
-                            if(restaurant.average_rating>5){
-                                var avg= restaurant.average_rating.toString()
+                            if (restaurant.average_rating > 5) {
+                                var avg = restaurant.average_rating.toString()
                                 console.log('rating wtf. ');
                             }
 
