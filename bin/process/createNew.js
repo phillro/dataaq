@@ -74,7 +74,7 @@ cli.main(function (args, options) {
                      })*/
                     Comparer.pairScrape(mongooseLayer, scrape, function (err, scrape, restaurant, reason) {
                         if (restaurant) {
-                            console.log('Paired ' + scrape._id + ' to ' + restaurant._id);
+                            //console.log('Paired ' + scrape._id + ' to ' + restaurant._id);
                         }
                         cb(err, scrape, restaurant, reason);
                     })
@@ -132,7 +132,7 @@ cli.main(function (args, options) {
                 }
             ], function (waterfallError, scrape, restaurant, reason) {
                 if (restaurant) {
-                    console.log('Created ' + restaurant._id + ' from ' + scrape._id);
+                    //console.log('Created ' + restaurant._id + ' from ' + scrape._id);
                 }
                 forEachScrapeCb(waterfallError);
 
@@ -144,6 +144,7 @@ cli.main(function (args, options) {
     }
 
     mongooseLayer.models.Scrape.count(query, function (err, total) {
+        console.log(total+' to pair/create.');
         async.whilst(function () {
             return done < total - 1;
         }, function (wCb) {
