@@ -1,0 +1,21 @@
+<ul>
+    <li>
+        <a href="/ven/list?next=<%=prev%>&limit=<%=limit%>">Prev</a>
+        <a href="/ven/list?next=<%=next%>&limit=<%=limit%>">Next</a>
+    </li>
+    <%for(var i=0;i<venues.length;i++){%>
+        <li>
+            <div>
+                <ul>
+                    <li><a href="/ven/show/<%=venues[i]._id%>"><%=venues[i].name%></a></li>
+                    <li><%=venues[i].addr%>, <%=venues[i].city%> <%=venues[i].state%>. <%=venues[i].postal_code%></li>
+                    <li>Ratings: <%=venues[i].ratings_count%></li>
+                    <li>Reviews: <%=venues[i].reviews_count%></li>
+                    <li>Features: <%=venues[i].feature_count%></li>
+                    <li>Enabled: <%=venues[i].enabled%></li>
+                </ul>
+            </div>                    
+        </li>
+    <%}%>
+
+</ul>

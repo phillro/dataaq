@@ -1,0 +1,38 @@
+<h2><%=venue.name%></h2>
+<span><%=venue.addr%>, <%=venue.city%> <%=venue.statecode%>. <%=venue.postal_code%></span>
+
+<div class="features">
+    <h3>Features</h3>
+    <ul>
+        <%for(var f in venue.features){%>
+            <li>
+                <span style="font-weight: bold"><%=f%></span><%=venue.features[f]%>
+            </li>
+        <%}%>
+    </ul>
+</div>
+
+<div class="reviews">
+    <h3>Reviews</h3>
+    <ul>
+        <%for(var i=0;i<venue.reviews.length;i++){%>
+            <li>
+                <%=venue.reviews[i].content%>
+            </li>
+        <%}%>
+    </ul>
+</div>
+
+
+
+
+<div class="ratings">
+    <h3>Ratings</h3>
+    <ul>
+        <%for(var i=0;i<venue.ratings.length;i++){%>
+            <li>
+                <%=venue.ratings[i].rating%>
+            </li>
+        <%}%>
+    </ul>
+</div>
