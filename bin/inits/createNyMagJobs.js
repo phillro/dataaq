@@ -47,7 +47,7 @@ cli.main(function (args, options) {
         var job = new Job(network, network+'results', opts, 'cli');
         job.processorMethods = 'networks/'+network+'/SearchResultProcessor';
         job.baseJob = 'networks/internal/defaultPageScraper';
-        jobQueue.push(job, callback);
+        //jobQueue.push(job, callback);
         //callback();
     }, function (forEachError) {
         console.log('done');
