@@ -33,7 +33,7 @@
         "redis":">0.0.1",
         "node-uuid":">0.0.1",
         "natural":">0.0.1",
-        "foursquarevenues":">0.0.1"
+        "foursquarevenues":"git+ssh://git@github.com:phillro/4square.git"
     }
 
 }

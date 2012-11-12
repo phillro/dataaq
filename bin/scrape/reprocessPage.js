@@ -43,11 +43,13 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    mongooseLayer.models.Scrape.findById(options.scrapeId, function (err, scrape) {
+    mongooseLayer.models.Scrape.find({network:'nymag'}, {}, {sort:{updatedAt:1}}, function (err, scrapes) {
+
         if (err) {
             console.log(err);
+            process.exit(0);
         } else {
-            if (scrape) {
+            async.forEachLimit(scrapes,1, function (scrape, callback) {
                 var NodeJobFactory = require(conf.jobRoot + 'networks/internal/reprocessScrape');
                 var ProcessorMethods = false;
                 switch (scrape.network) {
@@ -56,6 +58,9 @@ cli.main(function (args, options) {
                         break;
                     case 'menupages':
                         ProcessorMethods = require(conf.jobRoot + 'networks/menupages/DetailProcessor');
+                        break;
+                    case 'nymag':
+                        ProcessorMethods = require(conf.jobRoot + 'networks/nymag/DetailProcessor');
                         break;
                 }
                 if (ProcessorMethods) {
@@ -75,10 +80,14 @@ cli.main(function (args, options) {
                         process.exit(1);
                     })
                 }
-
-            }
+            }, function (forEachError) {
+                if(forEachError){
+                    console.log(forEachError);
+                }
+                console.log('done');
+                process.exit(0);
+            });
         }
     })
-
 
 })
