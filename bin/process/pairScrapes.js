@@ -47,7 +47,7 @@ cli.main(function (args, options) {
 
 
     var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
-    var query = {'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}, 'data.zip':{$in:zips}};
+    var query = {locationId:{$exists:false},'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}, 'data.zip':{$in:zips}};
 
     function getScrapes(start, num, cb) {
         mongooseLayer.models.Scrape.find(query, {}, {skip:start, limit:num, sort:{createdAt:-1}}, function (err, scrapes) {

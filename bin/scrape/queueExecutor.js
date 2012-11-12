@@ -21,8 +21,8 @@ var async = require('async'),
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
     config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
-    max:['m', 'Max to run concurrently', 'number', 1],
-    jobqueuename:['q', 'Job queue name', 'string','citysearchdetails']
+    max:['m', 'Max to run concurrently', 'number', 4],
+    jobqueuename:['q', 'Job queue name', 'string','yepdet']
 });
 
 cli.main(function (args, options) {

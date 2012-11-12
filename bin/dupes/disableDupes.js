@@ -40,7 +40,9 @@ cli.main(function (args, options) {
 
         //mongooseLayer.models.RestaurantMerged.find({_id:"4fdb771ce0795a6846ee7acf"}, {}, {}, function (err, venues) {
         var handledIds = [];
-        mongooseLayer.models.RestaurantMerged.find({}, {}, {}, function (err, venues) {
+        //var query = {_id:'4fdb7a20e0795a6846f2de73',excluded:{$ne:true}};
+        var query = {excluded:{$ne:true}};
+        mongooseLayer.models.RestaurantMerged.find(query, {}, {}, function (err, venues) {
             async.forEachSeries(venues, function (venue, forEachVenueCb) {
                 if (handledIds.indexOf(venue._id.toString()) == -1) {
                     async.waterfall([

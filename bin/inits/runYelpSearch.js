@@ -58,6 +58,7 @@ cli.main(function (args, options) {
 
     }
 
+        /*
     var zones = [
          {
              find_desc:'restaurants',
@@ -95,7 +96,14 @@ cli.main(function (args, options) {
              find_desc:'restaurants',
              find_loc:'10280',
          },
-     ];
+     ];*/
+
+    var zones = [
+        {
+            find_loc:'10282',
+            find_desc:'restaurants'
+        }
+    ]
 
     async.forEach (zones,function(zone, callback){
         yelpInputQueue.push(JSON.stringify(zone), callback);
