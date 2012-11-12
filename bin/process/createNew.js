@@ -51,16 +51,32 @@ cli.main(function (args, options) {
         'data.closed':{$ne:true},
     };
     var created = 0;
-    var existing = 0
-    mongooseLayer.models.Scrape.find(query, {}, {sort:{createdAt:-1}}, function (err, scrapes) {
-        async.forEachLimit(scrapes, 20, function (scrape, forEachScrapeCb) {
+    var existing = 0;
+    var done = 0;
+    var pageSize = 500;
+
+    function getScrapes(start, num, cb) {
+        mongooseLayer.models.Scrape.find(query, {}, {skip:start, limit:num}, function (err, scrapes) {
+            cb(err, scrapes);
+        });
+    }
+
+    function handleScrapes(scrapes, handleScrapesCb) {
+        async.forEachSeries(scrapes, function (scrape, forEachScrapeCb) {
+            done++;
             async.waterfall([
                 function confirmNonExistance(cb) {
-                    Comparer.suggestRestaurant(mongooseLayer, scrape, function (err, scrape, existingRestaurant, reason) {
-                        if (existingRestaurant) {
-                            existing++;
+                    /*    Comparer.suggestRestaurant(mongooseLayer, scrape, function (err, scrape, existingRestaurant, reason) {
+                     if (existingRestaurant) {
+                     existing++;
+                     }
+                     cb(err, scrape, existingRestaurant, reason);
+                     })*/
+                    Comparer.pairScrape(mongooseLayer, scrape, function (err, scrape, restaurant, reason) {
+                        if (restaurant) {
+                            console.log('Paired ' + scrape._id + ' to ' + restaurant._id);
                         }
-                        cb(err, scrape, existingRestaurant, reason);
+                        cb(err, scrape, restaurant, reason);
                     })
                 },
                 function createRestaurantObj(scrape, existingRestaurant, reason, cb) {
@@ -85,16 +101,17 @@ cli.main(function (args, options) {
                                 scrapedAt:scrape.createdAt
                             }
                         ];
-                        if(scrape.data.latitude&&scrape.data.longitude){
-                            try{
+                        if (scrape.data.latitude && scrape.data.longitude) {
+                            try {
                                 var geo = {};
-                                geo.lat =parseFloat(scrape.data.latitude);
-                                geo.lon =parseFloat(scrape.data.longitude);
-                            }catch(ex){}
-                            newRestaurant.geo=geo;
+                                geo.lat = parseFloat(scrape.data.latitude);
+                                geo.lon = parseFloat(scrape.data.longitude);
+                            } catch (ex) {
+                            }
+                            newRestaurant.geo = geo;
                         }
                         created++;
-                        newRestaurant.save(function(err,newRestaurant){
+                        newRestaurant.save(function (err, newRestaurant) {
                             cb(err, scrape, newRestaurant, reason);
                         })
                     } else {
@@ -121,13 +138,24 @@ cli.main(function (args, options) {
 
             })
         }, function (forEachError) {
-            if (forEachError) {
-                console.log(forEachError);
+
+            handleScrapesCb(forEachError);
+        });
+    }
+
+    mongooseLayer.models.Scrape.count(query, function (err, total) {
+        async.whilst(function () {
+            return done < total - 1;
+        }, function (wCb) {
+            getScrapes(done, pageSize, function (err, scrapes) {
+                handleScrapes(scrapes, wCb);
+            });
+        }, function (wErr) {
+            if (wErr) {
+                console.log(wErr);
             }
             console.log('done. Created ' + created + '/' + existing);
             process.exit(1);
         });
-
     })
-
 });

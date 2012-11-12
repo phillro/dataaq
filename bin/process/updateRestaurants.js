@@ -33,32 +33,40 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    var attributedFields = [
-        'transportation',
-        'attire',
-        'parking',
-        'goodformeal',
-        'alchohol',
-        'ambience',
-        'noiselevel',
-        'creditcards',
-        'delivery',
-        'groups',
-        'kids',
-        'reservations',
-        'takeout',
-        'tableservice',
-        'outdoorseating',
-        'wifi',
-        'tv',
-        'caters',
-        'wheelchair',
-        'goodviews',
-        'features',
-        'cuisine',
-        'menuJson',
-        'priceString'
-    ];
+    var attributedFields = {
+        'transportation':'transportation',
+        'attire':'attire',
+        'parking':'parking',
+        'goodformeal':'goodformeal',
+        'alchohol':'alchohol',
+        'ambience':'ambience',
+        'noiselevel':'noiselevel',
+        'creditcards':'creditcards',
+        'delivery':'delivery',
+        'groups':'groups',
+        'kids':'kids',
+        'reservations':'reservations',
+        'takeout':'takeout',
+        'tableservice':'tableservice',
+        'outdoorseating':'outdoorseating',
+        'wifi':'wifi',
+        'tv':'tv',
+        'caters':'caters',
+        'wheelchair':'wheelchair',
+        'goodviews':'goodviews',
+        'features':'features',
+        'cuisine':'cuisine',
+        'menuJson':'menuJson',
+        'menuUrl':'menuUrl',
+        'priceString':'priceString',
+        'tips':'tips',
+        'fsqtips':'tips',
+        fsqspecials:'fsqspecials',
+        fsqphotos:'fsqphotos',
+        fsqlikes:'fsqlikes',
+        fsqphrases:'fsqphrases',
+        'fsqmenu':'menuurl',
+    };
 
     var unattributedFields = {
         'neighborhoods':'neighborhoods',
@@ -77,29 +85,33 @@ cli.main(function (args, options) {
         })
     }
 
-    function handleFeatureField(field, restaurant, network) {
-        var dataField;
+    function handleFeatureField(sourceField, destField, restaurant, network) {
 
-        if (field == 'features') {
-            var features = network.data[field];
-            for (var f2 in features) {
-                restuarant = handleFeatureField(f2, restaurant, network);
-            }
-        } else {
-            if (!restaurant.features[field]&&network.data[field]) {
-                //console.log(restaurant._id);
-                restaurant.features[field] = network.data[field];
-                restaurant.feature_attributions.push({
-                    attribution:new Attribution(network.network, network.data.url, network.createdAt, network._id),
-                    field_name:field
-                })
-                var t = 1;
+        if (network.data) {
+            if (sourceField == 'features') {
+                var features = network.data[sourceField];
+                for (var f2 in features) {
+                    restuarant = handleFeatureField(f2, f2, restaurant, network);
+                }
             } else {
-                for (var j = 0; j < restaurant.feature_attributions.length; j++) {
-                    if (restaurant.feature_attributions[j].field_name == field) {
-                        if (restaurant.feature_attributions[j].attribution.date.getTime < network.createdAt.getTime()) {
-                            restaurant.features[field] = network.data[field];
-                            restaurant.feature_attributions[j].attribution = new Attribution(network.network, network.data.url, network.createdAt, network._id)
+                if (network.network == 'foursquare') {
+                    network.params.url = 'https://foursquare.com/v/' + network.data.fsqid;
+                }
+                if (!restaurant.features[destField] && network.data[sourceField]) {
+                    //console.log(restaurant._id);
+                    restaurant.features[destField] = network.data[sourceField];
+                    restaurant.feature_attributions.push({
+                        attribution:new Attribution(network.network, network.params.url, network.createdAt, network._id),
+                        field_name:destField
+                    })
+                    var t = 1;
+                } else {
+                    for (var j = 0; j < restaurant.feature_attributions.length; j++) {
+                        if (restaurant.feature_attributions[j].field_name == destField) {
+                            if (restaurant.feature_attributions[j].attribution.date.getTime < network.createdAt.getTime()) {
+                                restaurant.features[destField] = network.data[sourceField];
+                                restaurant.feature_attributions[j].attribution = new Attribution(network.network, network.params.url, network.createdAt, network._id)
+                            }
                         }
                     }
                 }
@@ -159,22 +171,25 @@ cli.main(function (args, options) {
                                 restaurant.features = {}
                             }
                             async.forEachSeries(networks, function (network, forEachSeriesCb) {
-                                for (var i = 0; i < attributedFields.length; i++) {
-                                    var field = attributedFields[i];
-                                    if (network.data[field]) {
-                                        if (field == 'menuJson') {
+                                //for (var i = 0; i < attributedFields.length; i++) {
+                                for (var f in attributedFields) {
+                                    //var field = attributedFields[i];
+                                    if (network.data[f]) {
+                                        if (f == 'menuJson') {
                                             restaurant.hasFeatureMenu = true;
+                                        }
+                                        if(f == 'fsqmenu'){
+                                            var url = network.data[f].url;
+                                            network.data[f]=url;
                                         }
 
                                     }
-                                    restaurant = handleFeatureField(field,restaurant,network);
+                                    restaurant = handleFeatureField(f, attributedFields[f], restaurant, network);
                                 }
-
-
 
                                 for (var field in unattributedFields) {
                                     if (network.data[field]) {
-                                        if (!restaurant._doc[field]&& network.data[field]) {
+                                        if (!restaurant._doc[field] && network.data[field]) {
                                             restaurant._doc[unattributedFields[field]] = network.data[field];
                                             restaurant.markModified(unattributedFields[field]);
                                         }
@@ -202,6 +217,16 @@ cli.main(function (args, options) {
                                     var networkAttribution = new Attribution(network.network, network.data.url, network.createdAt, network._id);
                                     for (var j = 0; j < network.data.reviews.length; j++) {
                                         var review = network.data.reviews[j];
+                                        try{
+                                            if(review.dtreviewed){
+                                                if(typeof review.dtreviewed=='string'){
+                                                    var d = new Date(review.dtreviewed);
+                                                    review.dtreviewed=d;
+                                                }
+                                            }
+                                        }catch(ex){
+                                            review.dtreviewed=null;
+                                        }
                                         review.attribution = networkAttribution;
                                         restaurant.reviews.push(review);
                                     }

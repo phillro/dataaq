@@ -21,8 +21,8 @@ var async = require('async'),
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
     config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
-    max:['m', 'Max to run concurrently', 'number', 5],
-    jobqueuename:['q', 'Job queue name', 'string', 'nymagreviews']
+    max:['m', 'Max to run concurrently', 'number', 1],
+    jobqueuename:['q', 'Job queue name', 'string','citysearchdetails']
 });
 
 cli.main(function (args, options) {
@@ -45,7 +45,9 @@ cli.main(function (args, options) {
     }});
 
     var redisClient = redis.createClient(conf.redis.port, conf.redis.host);
-    var jobQueue = new JobQueue(options.jobqueuename, {redisClient:redisClient})
+
+    var network='citysearch';
+    var jobQueue = new JobQueue(options.jobqueuename, {redisClient:redisClient});
     var pids = [];
 
     function processQueue(pid, cb) {

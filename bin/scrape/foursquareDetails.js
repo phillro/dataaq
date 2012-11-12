@@ -44,7 +44,7 @@ cli.main(function (args, options) {
         if (res && res.response && res.response.venue) {
             var fsqVenue = res.response.venue;
             var valueFields = {
-                tips:'fsqtips',
+                tips:'tips',
                 specials:'fsqspecials',
                 photos:'fsqphotos',
                 likes:'fsqlikes',
@@ -90,6 +90,7 @@ cli.main(function (args, options) {
                 console.log(forEachError);
             }
             console.log('done');
+            process.exit(0);
         });
     })
 

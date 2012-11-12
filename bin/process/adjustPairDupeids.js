@@ -47,7 +47,7 @@ cli.main(function (args, options) {
 
 
     var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
-    var query = {'data.name_meta':{$exists:true}, 'data.address_meta':{$exists:true}, 'data.zip':{$in:zips}};
+    var query = {locationId:{$exists:true}};
 
     function getScrapes(start, num, cb) {
         mongooseLayer.models.Scrape.find(query, {}, {skip:start, limit:num, sort:{createdAt:-1}}, function (err, scrapes) {
@@ -56,7 +56,7 @@ cli.main(function (args, options) {
     }
 
     var done = 0;
-    var pageSize = 500;
+    var pageSize = 100;
     var checked = 0;
         var found = 0;
     mongooseLayer.models.Scrape.count(query, function (err, total) {
@@ -64,45 +64,27 @@ cli.main(function (args, options) {
             return done < total - 1;
         }, function (wCb) {
             getScrapes(done, pageSize, function (err, scrapes) {
-                async.forEachLimit(scrapes, 100, function (scrape, forEachCallback) {
+                async.forEachLimit(scrapes, 20, function (scrape, forEachCallback) {
                     checked++;
-                    done++;
-                    /*async.waterfall([
-                        function suggestExisting(cb) {
-                            Comparer.suggestRestaurant(mongooseLayer, scrape, function (err, scrape, existingRestaurant, reason) {
-                                if (existingRestaurant) {
-                                    found++;
-                                }
-                                cb(err, scrape, existingRestaurant, reason);
-                            })
-                        },
-                        function pair(scrape, restaurant, reason, cb) {
-                            if (scrape && restaurant) {
-                                scrape.reason = reason;
-                                scrape.locationId = restaurant._id;
-                                console.log('Pairing ' + scrape._id + ' to ' + restaurant._id);
-                                scrape.save(function (err, scrape) {
-                                    cb(err, scrape, restaurant, reason);
-                                })
-                            } else {
-                                cb(err, scrape, false, false);
-                            }
-                        }
+                    async.waterfall([
+                       function isDupe(isDupeCb){
+                           mongooseLayer.models.RestaurantMerged.findOne({_id:scrape.locationId,deduped_id:{$exists:true}},{deduped_id:1},function(err,rest){
+                               if(rest){
+                                   found++;
+                                   scrape.locationId=rest.deduped_id;
+                                   scrape.save(isDupeCb);
+                               }else{
+                                   isDupeCb();
+                               }
+                           })
+                       }
                     ], function (waterfallError, results) {
                         done++;
                         forEachCallback(waterfallError);
-                    })*/
-                    Comparer.pairScrape(mongooseLayer,scrape,function(err, scrape, restaurant, reason){
-                        if(restaurant){
-                            console.log('Pairing ' + scrape._id + ' to ' + restaurant._id);
-                            found++;
-                        }
-                        forEachCallback(err);
                     })
 
                 }, function (forEachError) {
-                    console.log('Completed '+done);
-                    console.log(done/scrapes.length);
+                    console.log('Completed '+done+' found '+found);
                     wCb(forEachError);
                 });
             })

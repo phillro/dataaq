@@ -11,7 +11,7 @@ var cli = require('cli'),
     nodeio = require('node.io'),
     InputQueue = require('../lib/InputQueue').InputQueue,
     ProxyQueue = require('../lib/ProxyQueue').ProxyQueue,
-    mongoose=require('mongoose'),
+    mongoose = require('mongoose'),
     JobQueue = require('../lib/JobQueue').JobQueue,
     Job = require('../lib/JobQueue').Job
 
@@ -33,7 +33,8 @@ cli.main(function (args, options) {
     }
 
     var redisClient = redis.createClient(conf.redis.port, conf.redis.host);
-    var jobQueue = new JobQueue('insiderpagesdetails', {redisClient:redisClient})
+    var network='citysearch';
+    var jobQueue = new JobQueue(network+'details', {redisClient:redisClient})
 
     var ordrinMongoConnectionString = 'mongodb://' + conf.mongo.user + ':' + conf.mongo.password + '@' + conf.mongo.host + ':' + conf.mongo.port + '/' + conf.mongo.db
     var dbConn = mongoose.createConnection(ordrinMongoConnectionString);
@@ -42,19 +43,22 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    mongooseLayer.models.Scrape.find({network:'insiderpages'},function(err,scrapes){
-        async.forEach (scrapes,function(scrape, callback){
-            var detailsJob = new Job('insiderpages', 'insiderpagesdetails', {input:[scrape.data.url], scrapeId:scrape._id.toString()}, 'cli');
-            detailsJob.processorMethods = 'networks/insiderpages/DetailProcessor';
+
+
+    var zips = ['10280', '10005', '10038', '10002', '10009', '10004', '10011', '10003', '10014'];
+    mongooseLayer.models.Scrape.find({network:'citysearch','data.zip':{$in:zips}}, function (err, scrapes) {
+        async.forEach(scrapes, function (scrape, callback) {
+            var detailsJob = new Job(network, network+'details', {input:[scrape.data.url], scrapeId:scrape._id.toString()}, 'cli');
+            detailsJob.processorMethods = 'networks/'+network+'/DetailProcessor';
             detailsJob.baseJob = 'networks/internal/defaultPageScraper';
             jobQueue.push(detailsJob, callback);
 
-        },function(forEachError){
-            if(err){
-                        console.log(err);
-                    }
-                    console.log('done.');
-                    process.exit(1);
+        }, function (forEachError) {
+            if (err) {
+                console.log(err);
+            }
+            console.log('done.');
+            process.exit(1);
         });
     })
 
