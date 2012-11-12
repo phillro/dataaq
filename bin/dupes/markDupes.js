@@ -28,110 +28,101 @@ cli.parse({
 var mongooseLayer;
 
 cli.main(function (args, options) {
-    var conf = require(options.config_path)[options.env];
-    var ordrinMongoConnectionString = 'mongodb://' + conf.mongo.user + ':' + conf.mongo.password + '@' + conf.mongo.host + ':' + conf.mongo.port + '/' + conf.mongo.db
-    var ordrinDb = mongoose.createConnection(ordrinMongoConnectionString);
-    mongooseLayer = new VenueUtil.mongo(ordrinDb, {modelCollectionMapping:{
-        Venue:'clean_venues',
-        "RestaurantMerged":"amex_venues"
-    }});
+        var conf = require(options.config_path)[options.env];
+        var ordrinMongoConnectionString = 'mongodb://' + conf.mongo.user + ':' + conf.mongo.password + '@' + conf.mongo.host + ':' + conf.mongo.port + '/' + conf.mongo.db
+        var ordrinDb = mongoose.createConnection(ordrinMongoConnectionString);
+        mongooseLayer = new VenueUtil.mongo(ordrinDb, {modelCollectionMapping:{
+            Venue:'clean_venues',
+            "RestaurantMerged":"amex_venues"
+        }});
 
-    try {
-        conf = require(options.config_path)[options.env];
-        if (!conf) {
-            throw 'Config file not found';
-        }
-        var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
-       mongooseLayer.models.RestaurantMerged.find({name:{$exists:true},name_meta:{$exists:true},postal_code:{$in:zips}}, {}, {}, function (err, venues) {
-        //mongooseLayer.models.RestaurantMerged.find({_id:'4fdb767de0795a6846ed9db9'}, {}, {}, function (err, venues) {
+        try {
+            conf = require(options.config_path)[options.env];
+            if (!conf) {
+                throw 'Config file not found';
+            }
+            var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
+            //var query = {name:{$exists:true}, name_meta:{$exists:true}, postal_code:{$in:zips}};
+            var query = {_id:'4fdb79f2e0795a6846f296f4'};
+            4
+            var done = 0;
+            var pageSize = 500;
 
-            async.forEachLimit(venues, 5, function (venue, forEachCallback) {
-                async.waterfall([
-                    function (cb) {
-                        Comparer.suggestSimilairRestaurants(mongooseLayer, venue, function (err, suggestions, restaurantIds) {
-                            if (restaurantIds.length > 0) {
-                                restaurantIds.push(venue._id.toString());
-                                suggestions.push(venue);
-                            }
-                            cb(err, suggestions, restaurantIds);
-                        })
-                    },
-                    function (suggestions, restaurantIds, cb) {
-                        if (suggestions.length == 0) {
-                            cb(undefined, suggestions);
-                        } else {
-                            var rId = venue._id.toString();
-                          /*  var dupeIds = [];
-                            for (var i = 0; i < restaurantIds.length; i++) {
-                                if (restaurantIds[i] != rId) {
-                                    dupeIds.push(restaurantIds[i]);
-                                }
-                            }
-                            venue.dupe_ids = dupeIds;
-                            venue.dupe_ids_count = dupeIds.length;*/
-
-                            if(restaurantIds.length==1&&restaurantIds[0].toString()==rId){
-                                restaurantIds=[];
-                            }
-                            venue.dupe_ids=restaurantIds;
-                           // venue.dupe_ids_count=restaurantIds.length;
-
-                            venue.save(function (err, saveResult) {
-                                async.forEach(restaurantIds, function (restaurantId, callback) {
-                                    /*var otherVenueDupeIds = [];
-                                    for (var i = 0; i < restaurantIds.length; i++) {
-                                        if (restaurantIds[i] != restaurantId) {
-                                            otherVenueDupeIds.push(restaurantIds[i]);
-                                        }
-                                    }*/
-
-                                    mongooseLayer.models.RestaurantMerged.update({_id:restaurantId}, {$addToSet:{ dupe_ids:{ $each:restaurantIds } } }, callback);
-                                }, function (forEachError) {
-                                    cb(forEachError);
-                                });
-                            })
-                        }
-                    },
-                ], function (waterfallError) {
-                    forEachCallback(waterfallError);
+            function getRestaurants(start, num, getRestaurantsCb) {
+                mongooseLayer.models.RestaurantMerged.find(query, {}, {skip:start, limit:num}, function (err, venues) {
+                    getRestaurantsCb(err, venues);
                 })
-            }, function (forEachError) {
-                if (forEachError) {
-                    console.log(forEachError);
-                } else {
-                    console.log('Updating dupe counts.')
-                    updateDupIdsCount(function (err) {
-                        if (err) {
-                            console.log(err);
-                        }
-                        console.log('done.');
-                        process.exit(0);
+            }
+
+            function handleRestaurants(venues, handleRestaurantsCb) {
+                async.forEachLimit(venues, 5, function (venue, forEachCallback) {
+                    done++;
+                    async.waterfall([
+                        function (cb) {
+                            Comparer.suggestSimilairRestaurants(mongooseLayer, venue, function (err, suggestions, restaurantIds) {
+                                if (restaurantIds.length > 0) {
+                                    restaurantIds.push(venue._id.toString());
+                                    suggestions.push(venue);
+                                }
+                                cb(err, suggestions, restaurantIds);
+                            })
+                        },
+                        function (suggestions, restaurantIds, cb) {
+                            if (suggestions.length == 0) {
+                                cb(undefined, suggestions);
+                            } else {
+                                var rId = venue._id.toString();
+                                if (restaurantIds.length == 1 && restaurantIds[0].toString() == rId) {
+                                    restaurantIds = [];
+                                }
+                                venue.dupe_ids = restaurantIds;
+
+                                venue.save(function (err, saveResult) {
+                                    async.forEach(restaurantIds, function (restaurantId, callback) {
+                                        mongooseLayer.models.RestaurantMerged.update({_id:restaurantId}, {$addToSet:{ dupe_ids:{ $each:restaurantIds } } }, callback);
+                                    }, function (forEachError) {
+                                        cb(forEachError);
+                                    });
+                                })
+                            }
+                        },
+                    ], function (waterfallError) {
+                        forEachCallback(waterfallError);
+                    })
+                }, function (forEachError) {
+                    handleRestaurantsCb(forEachError);
+                });
+            }
+
+            mongooseLayer.models.RestaurantMerged.count(query, function (err, total) {
+                async.whilst(function () {
+                    console.log('Done '+done+' of '+(total));
+                    return done < total;
+                }, function (wCb) {
+                    getRestaurants(done, pageSize, function (err, venues) {
+                        handleRestaurants(venues, wCb);
                     });
-                }
-
+                }, function (wErr) {
+                    if (wErr) {
+                        console.log(wErr);
+                        process.exit(0);
+                    } else {
+                        updateDupIdsCount(function (err) {
+                            if (err) {
+                                console.log(err)
+                            }
+                            console.log('done');
+                            process.exit(0);
+                        });
+                    }
+                })
             });
-        });
-
-    } catch (ex) {
-        console.log(ex);
-        process.exit(1);
-    }
-})
-
-function markDupes(restaurantIds, cb) {
-    async.forEach(restaurantIds, function (restaurantId, callback) {
-        var dupe_ids = [];
-        for (var i = 0; i < matches.length; i++) {
-            var c = matches[i];
-            //if (match._id.toString() != c._id.toString()) {
-            dupe_ids.push(c._id);
-            //}
+        } catch (ex) {
+            console.log(ex);
+            process.exit(1);
         }
-        mongooseLayer.models.RestaurantMerged.update({_id:match._id}, {dupe_ids_count:dupe_ids.length, $addToSet:{ dupe_ids:{ $each:dupe_ids } } }, callback);
-    }, function (forEachError) {
-        cb(forEachError);
-    });
-}
+    }
+)
 
 function updateDupIdsCount(cb) {
     mongooseLayer.models.RestaurantMerged.find({}, {dupe_ids:1}, {}, function (err, venues) {
@@ -143,30 +134,3 @@ function updateDupIdsCount(cb) {
         });
     });
 }
-
-/*
-
- function suggestDupesByAddrMetaphone(venue, cb) {
- var nameMetaPhones = venue.name_meta.meta_phones;
- var addrMetaPhones = venue.addr_meta.meta_phones;
- var query = {
- 'addr_meta.meta_phones':addrMetaPhones,
- 'name_meta.meta_phones':nameMetaPhones
- }
- mongooseLayer.models.RestaurantMerged.find(query, function (err, matches) {
- cb(err, matches);
- })
-
- }
-
- function suggestDupesByGeo(venue, cb) {
- var nameMetaPhones = venue.name_meta.meta_phones;
- var query = {
- geo:{ $near:[parseFloat(venue.geo.lon.toString()), parseFloat(venue.geo.lat.toString())], $maxDistance:.002 },
- 'name_meta.meta_phones':nameMetaPhones
- }
- mongooseLayer.models.RestaurantMerged.find(query, function (err, matches) {
- cb(err, matches);
- })
-
- }*/

@@ -39,59 +39,73 @@ cli.main(function (args, options) {
         }
 
         //mongooseLayer.models.RestaurantMerged.find({_id:"4fdb771ce0795a6846ee7acf"}, {}, {}, function (err, venues) {
+        var handledIds = [];
         mongooseLayer.models.RestaurantMerged.find({}, {}, {}, function (err, venues) {
-            async.forEachLimit(venues, 1, function (venue, forEachVenueCb) {
-                async.waterfall([
-                    function getCanditates(cb) {
-                        mongooseLayer.models.RestaurantMerged.find({_id:{$in:venue.dupe_ids}}, cb);
-                    },
-                    function chooseVenue(candidates, cb) {
-                        chooseDedupedVenue(candidates, function (err, selectedCandidate) {
-                            cb(err, selectedCandidate, candidates);
-                        });
-                    },
-                    function enableSelected(selectedVenue, candidates, cb) {
-                        if (selectedVenue) {
-                            selectedVenue.enabled = true;
-                            selectedVenue.deduped_id=null;
-                            selectedVenue.save(function (err, savedVenue) {
-                                cb(err, savedVenue, candidates);
+            async.forEachSeries(venues, function (venue, forEachVenueCb) {
+                if (handledIds.indexOf(venue._id.toString()) == -1) {
+                    async.waterfall([
+                        function getCanditates(cb) {
+                            mongooseLayer.models.RestaurantMerged.find({_id:{$in:venue.dupe_ids}}, cb);
+                        },
+                        function chooseVenue(candidates, cb) {
+                            chooseDedupedVenue(candidates, function (err, selectedCandidate) {
+                                cb(err, selectedCandidate, candidates);
                             });
-                        } else {
-                            //no dupes, enable it
-                            venue.enabled=!venue.closed ? true:false;
-                            venue.deduped_id=null;
-                            console.log('No selected venues for ' + venue._id + ' ' + candidates.length)
-                                venue.save(function(err,savedVenue){
+                        },
+                        function enableSelected(selectedVenue, candidates, cb) {
+                            if (selectedVenue) {
+                                handledIds.push(selectedVenue._id.toString());
+                                selectedVenue.enabled = true;
+                                selectedVenue.deduped_id = null;
+                                selectedVenue.save(function (err, savedVenue) {
+                                    cb(err, savedVenue, candidates);
+                                });
+                            } else {
+                                //no dupes, enable it
+                                handledIds.push(venue._id.toString());
+                                venue.enabled = !venue.closed ? true : false;
+                                venue.deduped_id = null;
+                                console.log('No selected venues for ' + venue._id + ' ' + candidates.length)
+                                venue.save(function (err, savedVenue) {
                                     cb(err, savedVenue, candidates);
                                 })
 
-
+                            }
+                        },
+                        function disableOthers(selected, candidates, cb) {
+                            if (selected) {
+                                var updateIds = [];
+                                async.forEach(candidates, function (venue, forEachCallback) {
+                                    if (selected._id.toString() != venue._id.toString()) {
+                                        updateIds.push(venue._id.toString());
+                                        handledIds.push(venue._id.toString());
+                                        /*                                    venue.enabled = false;
+                                         venue.deduped_id = selected._id;
+                                         venue.save(forEachCallback);*/
+                                        forEachCallback();
+                                    } else {
+                                        forEachCallback();
+                                    }
+                                }, function (forEachError) {
+                                    if (updateIds.length > 0) {
+                                        mongooseLayer.models.RestaurantMerged.update({_id:{$in:updateIds}}, {$set:{deduped_id:selected._id, enabled:false}}, {multi:true}, cb);
+                                    } else {
+                                        cb(forEachError);
+                                    }
+                                });
+                            } else {
+                                cb();
+                            }
                         }
-                    },
-                    function disableOthers(selected, candidates, cb) {
-                        if (selected) {
-                            async.forEach(candidates, function (venue, forEachCallback) {
-                                if (selected._id.toString() != venue._id.toString()) {
-                                    venue.enabled = false;
-                                    venue.deduped_id = selected._id;
-                                    venue.save(forEachCallback);
-                                } else {
-                                    cb();
-                                }
-                            }, function (forEachError) {
-                                cb(forEachError);
-                            });
-                        } else {
-                            cb();
+                    ], function (waterfallError, results) {
+                        if (waterfallError) {
+                            console.log(waterfallError);
                         }
-                    }
-                ], function (waterfallError, results) {
-                    if (waterfallError) {
-                        console.log(waterfallError);
-                    }
-                    forEachVenueCb(waterfallError);
-                })
+                        forEachVenueCb(waterfallError);
+                    })
+                } else {
+                    forEachVenueCb(undefined);
+                }
             }, function (forEachError) {
                 if (forEachError) {
                     console.log(forEachError);

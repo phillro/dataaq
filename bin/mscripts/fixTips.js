@@ -38,7 +38,7 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    mongooseLayer.models.Scrape.find({network:'nymag', 'data.tips':{$exists:true}}, function (err, scrapes) {
+    /*mongooseLayer.models.Scrape.find({network:'nymag', 'data.tips':{$exists:true}}, function (err, scrapes) {
         async.forEach(scrapes, function (scrape, callback) {
             var tips = {
                 count:0,
@@ -72,5 +72,23 @@ cli.main(function (args, options) {
         });
 
     })
+*/
 
+    mongooseLayer.models.Scrape.find({network:'foursquare', 'data.tips':{$exists:true}}, function (err, scrapes) {
+            async.forEach(scrapes, function (scrape, callback) {
+               if(scrape.data.fsqmenu){
+                   scrape.data.menuUrl=scrape.data.fsqmenu;
+               }
+                scrape.markModified('data');
+                scrape.save(callback);
+
+            }, function (forEachError) {
+                if (forEachError) {
+                    console.log(forEachError);
+                }
+                console.log('done');
+                process.exit(0);
+            });
+
+        })
 })
