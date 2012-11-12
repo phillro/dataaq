@@ -56,7 +56,7 @@ cli.main(function (args, options) {
         var rows = [headerRow];
         async.waterfall([
             function getRestaurants(cb) {
-                mongooseLayer.models.RestaurantMerged.find({closed:{$ne:true}}, fields,
+                mongooseLayer.models.RestaurantMerged.find({closed:{$ne:true},excluded:{$ne:true}}, fields,
                     {sort:{name:-1}}, function (err, venues) {
 
                         for (var i = 0; i < venues.length; i++) {

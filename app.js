@@ -67,11 +67,15 @@ cli.main(function (args, options) {
         var start = req.query.next || 0;
         var limit = req.query.limit || 20;
         var onlyenabled = req.query.onlyenabled == 'true' ? true :false;
+        var excluded = req.query.excluded == 'true' ? true :false;
         start=parseFloat(start);
         limit=parseFloat(limit);
         var query = {};
         if(onlyenabled){
             query.enabled=onlyenabled;
+        }
+        if(excluded){
+            query.excluded=excluded;
         }
         req.models.RestaurantMerged.find(query,{}, {skip:start, limit:limit,sort:{feature_count:-1}}, function (err, venues) {
             if (err) {

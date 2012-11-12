@@ -33,7 +33,7 @@ cli.main(function (args, options) {
     var jobQueue = new JobQueue('default', {redisClient:redisClient})
 
     var zones = [
-        {
+   /*     {
             find_desc:'restaurants',
             find_loc:'10014',
             count:4
@@ -72,11 +72,11 @@ cli.main(function (args, options) {
             find_desc:'restaurants',
             find_loc:'10005',
             count:1
-        },
+        },*/
         {
             find_desc:'restaurants',
-            find_loc:'10280',
-            count:1
+            find_loc:'10282',
+            count:12
         },
     ];
 

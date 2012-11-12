@@ -41,15 +41,16 @@ cli.main(function (args, options) {
             if (!conf) {
                 throw 'Config file not found';
             }
-            var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
-            var query = {name:{$exists:true}, name_meta:{$exists:true}, postal_code:{$in:zips}};
-            //var query = {_id:'4fdb79f2e0795a6846f296f4'};
-
+            var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280','10282'];
+            var query = {name:{$exists:true}, name_meta:{$exists:true}, postal_code:{$in:zips},excluded:{$ne:true}};
+            //var query = {_id:'4fdb6803e0795a6846e3a73a',excluded:{$ne:true}};
+console.log(query);
             var done = 0;
             var pageSize = 500;
 
             function getRestaurants(start, num, getRestaurantsCb) {
-                mongooseLayer.models.RestaurantMerged.find(query, {}, {skip:start, limit:num}, function (err, venues) {
+                console.log('getting restaurants');
+                mongooseLayer.models.RestaurantMerged.find(query, {}, {skip:start, limit:num, sort:{updated_at:-1}}, function (err, venues) {
                     getRestaurantsCb(err, venues);
                 })
             }
@@ -78,11 +79,25 @@ cli.main(function (args, options) {
                                 venue.dupe_ids = restaurantIds;
 
                                 venue.save(function (err, saveResult) {
-                                    async.forEach(restaurantIds, function (restaurantId, callback) {
-                                        mongooseLayer.models.RestaurantMerged.update({_id:restaurantId}, {$addToSet:{ dupe_ids:{ $each:restaurantIds } } }, callback);
+
+                                    async.forEach(suggestions, function (sug, callback) {
+                                        var dupes = sug.dupe_ids;
+                                        sug.dupe_ids = union_arrays(sug.dupe_ids, restaurantIds)
+                                        sug.save(function (err, sugRes) {
+                                            callback(err, sugRes);
+                                        })
+
                                     }, function (forEachError) {
                                         cb(forEachError);
                                     });
+                                    //async.forEach(restaurantIds, function (restaurantId, callback) {
+                                    //mongooseLayer.models.RestaurantMerged.update({_id:{$in:restaurantIds}}, {$set:{test:12},$addToSet:{ dupe_ids:{ $each:restaurantIds } } },{multi:true},function(uErr,uRes){
+
+                                    //  cb(uErr, uRes);
+                                    //});
+                                    //}, function (forEachError) {
+                                    //  cb(forEachError);
+                                    //});
                                 })
                             }
                         },
@@ -94,9 +109,10 @@ cli.main(function (args, options) {
                 });
             }
 
+            console.log('Marking dupes')
             mongooseLayer.models.RestaurantMerged.count(query, function (err, total) {
                 async.whilst(function () {
-                    console.log('Done '+done+' of '+(total));
+                    console.log('Done ' + done + ' of ' + (total));
                     return done < total;
                 }, function (wCb) {
                     getRestaurants(done, pageSize, function (err, venues) {
@@ -123,6 +139,21 @@ cli.main(function (args, options) {
         }
     }
 )
+function union_arrays(x, y) {
+    var obj = {};
+    for (var i = x.length - 1; i >= 0; --i)
+        obj[x[i]] = x[i];
+    for (var i = y.length - 1; i >= 0; --i)
+        obj[y[i]] = y[i];
+    var res = []
+    for (var k in obj) {
+        if (obj.hasOwnProperty(k))  // <-- optional
+        {
+            res.push(obj[k]);
+        }
+    }
+    return res;
+}
 
 function updateDupIdsCount(cb) {
     mongooseLayer.models.RestaurantMerged.find({}, {dupe_ids:1}, {}, function (err, venues) {

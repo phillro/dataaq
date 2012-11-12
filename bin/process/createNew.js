@@ -34,7 +34,7 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
+    var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280','10282'];
 
     var query = {
         locationId:{$exists:false},
@@ -49,7 +49,10 @@ cli.main(function (args, options) {
         'data.url':{$exists:true},
         'data.zip':{$in:zips},
         'data.closed':{$ne:true},
-    };
+    };/*
+    var query = {
+        locationId:{$exists:false},
+        'data.name':{$exists:true},'data.zip':'10282'};*/
     var created = 0;
     var existing = 0;
     var done = 0;

@@ -17,7 +17,11 @@
     <ul>
         <%for(var i=0;i<venue.reviews.length;i++){%>
             <li>
+                <span><%=venue.reviews[i].dtreviewed%></span>
+                <span><%=venue.reviews[i].attribution.sourceName%></span>
+                <p>
                 <%=venue.reviews[i].content%>
+                </p>
             </li>
         <%}%>
     </ul>
