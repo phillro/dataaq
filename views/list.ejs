@@ -1,21 +1,31 @@
 <ul>
-    <li>
+    <li style="list-style: none;">
         <a href="/ven/list?next=<%=prev%>&limit=<%=limit%>">Prev</a>
         <a href="/ven/list?next=<%=next%>&limit=<%=limit%>">Next</a>
     </li>
+</ul>
+<ul style="float: left; width:1000px;">
     <%for(var i=0;i<venues.length;i++){%>
-        <li>
-            <div>
-                <ul>
-                    <li><a href="/ven/show/<%=venues[i]._id%>"><%=venues[i].name%></a></li>
-                    <li><%=venues[i].addr%>, <%=venues[i].city%> <%=venues[i].state%>. <%=venues[i].postal_code%></li>
-                    <li>Ratings: <%=venues[i].ratings_count%></li>
-                    <li>Reviews: <%=venues[i].reviews_count%></li>
-                    <li>Features: <%=venues[i].feature_count%></li>
-                    <li>Enabled: <%=venues[i].enabled%></li>
-                </ul>
-            </div>                    
-        </li>
+    <li style="float:left;list-style: none; ">
+        <div style="width:300px;margin: 15px;">
+            <ul style="padding-left: 20px;">
+                <li style="list-style: none;"><a href="/ven/show/<%=venues[i]._id%>"><%=venues[i].name%></a></li>
+                <li style="list-style: none;"><%=venues[i].addr%>, <%=venues[i].city%> <%=venues[i].state||venues[i].statecode%>. <%=venues[i].postal_code%></li>
+                <li style="list-style: none;">Ratings: <%=venues[i].ratings_count%></li>
+                <li style="list-style: none;">Reviews: <%=venues[i].reviews_count%></li>
+                <li style="list-style: none;">Features: <%=venues[i].feature_count%></li>
+                <li style="list-style: none;">Sources: <%=venues[i].source_count%></li>
+                <li style="list-style: none;">Networks:
+                    <%for(var j=0;j<venues[i].network_ids.length;j++){%>
+                        <%=venues[i].network_ids[j].name%>
+                    <%}%>
+                </li>
+                <li style="list-style: none;">Has menu: <%=venues[i].has_feature_menu%></li>
+
+                <li style="list-style: none;">Enabled: <%=venues[i].enabled%></li>
+            </ul>
+        </div>
+    </li>
     <%}%>
 
 </ul>

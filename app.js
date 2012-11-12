@@ -66,9 +66,14 @@ cli.main(function (args, options) {
     app.get('/ven/list', function (req, res) {
         var start = req.query.next || 0;
         var limit = req.query.limit || 20;
+        var onlyenabled = req.query.onlyenabled == 'true' ? true :false;
         start=parseFloat(start);
         limit=parseFloat(limit);
-        req.models.RestaurantMerged.find({enabled:true},{}, {skip:start, limit:limit}, function (err, venues) {
+        var query = {};
+        if(onlyenabled){
+            query.enabled=onlyenabled;
+        }
+        req.models.RestaurantMerged.find(query,{}, {skip:start, limit:limit,sort:{feature_count:-1}}, function (err, venues) {
             if (err) {
                 res.send({err:err.toStrin()});
             } else {

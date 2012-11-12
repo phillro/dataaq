@@ -42,9 +42,9 @@ cli.main(function (args, options) {
                 throw 'Config file not found';
             }
             var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280'];
-            //var query = {name:{$exists:true}, name_meta:{$exists:true}, postal_code:{$in:zips}};
-            var query = {_id:'4fdb79f2e0795a6846f296f4'};
-            4
+            var query = {name:{$exists:true}, name_meta:{$exists:true}, postal_code:{$in:zips}};
+            //var query = {_id:'4fdb79f2e0795a6846f296f4'};
+
             var done = 0;
             var pageSize = 500;
 
