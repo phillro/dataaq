@@ -79,6 +79,9 @@ cli.main(function (args, options) {
                     });
                 },
                 function fsqVenue(scrape, fsqVenue, fsqVenueCb) {
+                    if(fsqVenue){
+                        console.log('updating '+scrape.data.name);
+                    }
                     updateScrape(scrape, fsqVenue, fsqVenueCb);
                 }
             ], function (waterfallError, results) {

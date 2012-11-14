@@ -45,7 +45,8 @@ cli.main(function (args, options) {
         "ll":"40.7,-74",
         "limit":50,
         "categoryId":"4d4b7105d754a06374d81259",
-        "radios":200
+        //"radius":200
+        query:'nobu'
     };
 
     function createScrapeFromFoursquareVenue(venue, cb) {
@@ -146,6 +147,8 @@ cli.main(function (args, options) {
                         while (r--) {
                             if (restaurants[r].geo.lat && restaurants[r].geo.lon) {
                                 var params = {
+                                    //query:'nobu',
+                                    //ll:'40.71938641334937,-74.0086925010449',
                                     'll':restaurants[r].geo.lat + "," + restaurants[r].geo.lon,
                                     'limit':50,
                                     "categoryId":"4d4b7105d754a06374d81259",

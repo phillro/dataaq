@@ -30,7 +30,7 @@ cli.main(function (args, options) {
 
     var network = 'menupages';
     var redisClient = redis.createClient(conf.redis.port, conf.redis.host);
-    var jobQueue = new JobQueue('default', {redisClient:redisClient})
+    var jobQueue = new JobQueue('10013', {redisClient:redisClient})
 
     var zones = [
    /*     {
@@ -75,8 +75,8 @@ cli.main(function (args, options) {
         },*/
         {
             find_desc:'restaurants',
-            find_loc:'10282',
-            count:12
+            find_loc:'10013',
+            count:5
         },
     ];
 

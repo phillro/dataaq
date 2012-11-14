@@ -9,7 +9,8 @@ var cli = require('cli'),
 
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
-    config_path:['c', 'Config file path.', 'string', '../../etc/conf']
+    config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
+    _id:['i', 'Scrape id to pair/create', 'string', 'all']
 });
 
 cli.main(function (args, options) {
@@ -34,7 +35,7 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280','10282'];
+    var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280', '10282'];
 
     var query = {
         locationId:{$exists:false},
@@ -49,10 +50,17 @@ cli.main(function (args, options) {
         'data.url':{$exists:true},
         'data.zip':{$in:zips},
         'data.closed':{$ne:true},
-    };/*
-    var query = {
-        locationId:{$exists:false},
-        'data.name':{$exists:true},'data.zip':'10282'};*/
+    };
+    /*
+     var query = {
+     locationId:{$exists:false},
+     'data.name':{$exists:true},'data.zip':'10282'};*/
+
+//    var query = {data:{$exists:true}, 'data.name_meta':{$exists:true}};
+    if (options._id && options._id != 'all') {
+        query['_id'] = options._id.toString();
+    }
+
     var created = 0;
     var existing = 0;
     var done = 0;
@@ -147,9 +155,9 @@ cli.main(function (args, options) {
     }
 
     mongooseLayer.models.Scrape.count(query, function (err, total) {
-        console.log(total+' to pair/create.');
+        console.log(total + ' to pair/create.');
         async.whilst(function () {
-            return done < total - 1;
+            return done <= total;
         }, function (wCb) {
             getScrapes(done, pageSize, function (err, scrapes) {
                 handleScrapes(scrapes, wCb);

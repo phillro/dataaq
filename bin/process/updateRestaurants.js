@@ -8,7 +8,8 @@ var cli = require('cli'),
 
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
-    config_path:['c', 'Config file path.', 'string', '../../etc/conf']
+    config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
+    _id:['i', 'Scrape id to pair/create', 'string', 'all']
 });
 
 cli.main(function (args, options) {
@@ -61,6 +62,7 @@ cli.main(function (args, options) {
         'priceString':'priceString',
         'tips':'tips',
         'fsqtips':'tips',
+        'fsqcategories':'fsqcategories',
         fsqspecials:'fsqspecials',
         fsqphotos:'fsqphotos',
         fsqlikes:'fsqlikes',
@@ -68,54 +70,54 @@ cli.main(function (args, options) {
         fsqcatids:'fsqcatids',
         'fsqmenu':'menuurl',
         "24hours":"24hours",
-       	"byob":"alchohol",
-       	"barscene":"barscene",
-       	"brunchdaily":"brunchdaily",
-       	"buffet":"buffet",
-       	"businessdining":"businessdining",
-       	"businesslunch":"businesslunch",
-       	"celebspotting":"celebspotting",
-       	"cheapeats":"cheapeats",
-       	"classicny":"classicny",
-       	"deliveryafter10pm":"deliveryafter10pm",
-       	"designstandout":"designstandout",
-       	"dineatthebar":"dineatthebar",
-       	"familystyle":"familystyle",
-       	"fireplace":"fireplace",
-       	"foodtruck/cart":"foodtruck",
-       	"glutenfreeitems":"glutenfreeitems",
-       	"greatdesserts":"greatdesserts",
-       	"happyhour":"happyhour",
-       	"hotspot":"hotspot",
-       	"kidfriendly":"kidfriendly",
-       	"kidsmenu":"kidsmenu",
-       	"latenightdining":"latenightdining",
-       	"liveentertainment":"liveentertainment",
-       	"livemusic":"livemusic",
-       	"lunchspecial":"lunchspecial",
-       	"notablechef":"notablechef",
-       	"notablewinelist":"notablewinelist",
-       	"onlineordering":"onlineordering",
-       	"onlinereservations":"onlinereservations",
-       	"open24hours":"24hours",
-       	"openkitchens/watchthechef":"openkitchens",
-       	"openlate":"openlate",
-       	"peoplewatching":"peoplewatching",
-       	"pre/posttheater":"preposttheater",
-       	"privatedining/partyspace":"privatedining",
-       	"prixfixe":"prixfixe",
-       	"rawbar":"rawbar",
-       	"reservationsnotrequired":"reservationsnotrequired",
-       	"romantic":"romantic",
-       	"smokingarea":"smokingarea",
-       	"specialoccasion":"smokingarea",
-       	"tastingmenu":"tastingmenu",
-       	"teatime":"teatime",
-       	"teenappeal":"teenappeal",
-       	"theaterdistrict":"theaterdistrict",
-       	"trendy":"trendy",
-       	"view":"view",
-       	"waterfront":"waterfront"
+        "byob":"alchohol",
+        "barscene":"barscene",
+        "brunchdaily":"brunchdaily",
+        "buffet":"buffet",
+        "businessdining":"businessdining",
+        "businesslunch":"businesslunch",
+        "celebspotting":"celebspotting",
+        "cheapeats":"cheapeats",
+        "classicny":"classicny",
+        "deliveryafter10pm":"deliveryafter10pm",
+        "designstandout":"designstandout",
+        "dineatthebar":"dineatthebar",
+        "familystyle":"familystyle",
+        "fireplace":"fireplace",
+        "foodtruck/cart":"foodtruck",
+        "glutenfreeitems":"glutenfreeitems",
+        "greatdesserts":"greatdesserts",
+        "happyhour":"happyhour",
+        "hotspot":"hotspot",
+        "kidfriendly":"kidfriendly",
+        "kidsmenu":"kidsmenu",
+        "latenightdining":"latenightdining",
+        "liveentertainment":"liveentertainment",
+        "livemusic":"livemusic",
+        "lunchspecial":"lunchspecial",
+        "notablechef":"notablechef",
+        "notablewinelist":"notablewinelist",
+        "onlineordering":"onlineordering",
+        "onlinereservations":"onlinereservations",
+        "open24hours":"24hours",
+        "openkitchens/watchthechef":"openkitchens",
+        "openlate":"openlate",
+        "peoplewatching":"peoplewatching",
+        "pre/posttheater":"preposttheater",
+        "privatedining/partyspace":"privatedining",
+        "prixfixe":"prixfixe",
+        "rawbar":"rawbar",
+        "reservationsnotrequired":"reservationsnotrequired",
+        "romantic":"romantic",
+        "smokingarea":"smokingarea",
+        "specialoccasion":"smokingarea",
+        "tastingmenu":"tastingmenu",
+        "teatime":"teatime",
+        "teenappeal":"teenappeal",
+        "theaterdistrict":"theaterdistrict",
+        "trendy":"trendy",
+        "view":"view",
+        "waterfront":"waterfront"
     };
 
     var unattributedFields = {
@@ -128,10 +130,17 @@ cli.main(function (args, options) {
 
     var pageSize = 20;
     var done = 0;
+    //50
+    var query = {excluded:{$ne:true}};
+    if (options._id && options._id != 'all') {
+        query['_id'] = options._id.toString();
+    }
+    console.log(query);
+
 
     function getRestaurants(start, num, cb) {
         //mongooseLayer.models.RestaurantMerged.find({_id:'50a0b6b396be3c4a33022ac9',excluded:{$ne:true}}, {}, {skip:start, limit:num, sort:{updated_at:-1}}, function (err, restaurants) {
-        mongooseLayer.models.RestaurantMerged.find({excluded:{$ne:true}}, {}, {skip:start, limit:num, sort:{updated_at:-1}}, function (err, restaurants) {
+        mongooseLayer.models.RestaurantMerged.find(query, {}, {skip:start, limit:num, sort:{updated_at:-1}}, function (err, restaurants) {
             cb(err, restaurants);
         })
     }
@@ -172,10 +181,10 @@ cli.main(function (args, options) {
 
     }
 
-    mongooseLayer.models.RestaurantMerged.count({}, function (err, total) {
+    mongooseLayer.models.RestaurantMerged.count(query, function (err, total) {
         async.whilst(function () {
             console.log(done + ' of ' + total);
-            return done < total - 1;
+            return done <= total;
         }, function (wCb) {
             console.log('get restaurants');
             getRestaurants(done, pageSize, function (err, restaurants) {
@@ -188,7 +197,7 @@ cli.main(function (args, options) {
                             function getScrapes(cb) {
                                 // console.log(restaurant._id);
                                 console.log('get scrapes');
-                                mongooseLayer.models.Scrape.find({locationId:restaurant._id}, {}, {limit:5, sort:{createdAt:-1}}, function (err, scrapes) {
+                                mongooseLayer.models.Scrape.find({locationId:restaurant._id}, {}, {sort:{createdAt:-1}}, function (err, scrapes) {
                                     cb(err, scrapes);
                                 })
                             },
@@ -201,23 +210,38 @@ cli.main(function (args, options) {
                                         networkMap[scrape.network] = scrape;
                                     } else {
                                         //Take the scrape with the most reviews, otherwise most recent
-                                        if (networkMap[scrape.network].reviews && scrape.data.reviews) {
-                                            if (networkMap[scrape.network].reviews.length == scrape.data.reviews.length) {
-                                                networkMap[scrape.network] = networkMap[scrape.network].createdAt.getTime() > scrape.createdAt.getTime() ? networkMap[scrape.network] : scrape;
+
+                                        var selected = false;
+
+                                        if (scrape.data.menuJson || networkMap[scrape.network].data.menuJson) {
+                                            if (scrape.data.menuJson && networkMap[scrape.network].data.menuJson) {
+                                                selected = networkMap[scrape.network].createdAt.getTime() > scrape.createdAt.getTime() ? networkMap[scrape.network] : scrape;
                                             } else {
-                                                networkMap[scrape.network] = networkMap[scrape.network].reviews.length > scrape.data.reviews.length ? networkMap[scrape.network] : scrape;
-                                            }
-                                        } else {
-                                            if (scrape.data.reviews) {
-                                                networkMap[scrape.network] = scrape;
-                                            } else {
-                                                networkMap[scrape.network] = networkMap[scrape.network].createdAt.getTime() > scrape.createdAt.getTime() ? networkMap[scrape.network] : scrape;
+                                                selected = networkMap[scrape.network].data.menuJson ? networkMap[scrape.network] : scrape;
                                             }
                                         }
+                                        if (!selected) {
+                                            if (networkMap[scrape.network].reviews && scrape.data.reviews) {
+                                                if (networkMap[scrape.network].reviews.length == scrape.data.reviews.length) {
+                                                    selected = networkMap[scrape.network].createdAt.getTime() > scrape.createdAt.getTime() ? networkMap[scrape.network] : scrape;
+                                                } else {
+                                                    selected = networkMap[scrape.network].reviews.length > scrape.data.reviews.length ? networkMap[scrape.network] : scrape;
+                                                }
+                                            } else {
+                                                if (scrape.data.reviews) {
+                                                    selected = scrape;
+                                                } else {
+                                                    selected = networkMap[scrape.network].createdAt.getTime() > scrape.createdAt.getTime() ? networkMap[scrape.network] : scrape;
+                                                }
+                                            }
+                                        }
+
+                                        networkMap[scrape.network]=selected?selected : networkMap[scrape.network];
                                     }
                                 }
                                 var networks = [];
                                 for (var n in networkMap) {
+                                    console.log(networkMap[n]._id);
                                     networks.push(networkMap[n]);
                                 }
                                 networks = networks.sort(function (a, b) {
@@ -311,7 +335,7 @@ cli.main(function (args, options) {
                                     }
                                 })
                                 restaurant.reviews_count = reviews.length;
-                                restaurant.reviews=reviews;
+                                restaurant.reviews = reviews;
                                 cb(undefined, networks, networkMap)
                             },
                             function updateRatings(networks, networkMap, cb) {
@@ -362,13 +386,13 @@ cli.main(function (args, options) {
                                 }
 
                                 restaurant.source_count = restaurant.network_ids.length;
-                                restaurant.network_ids=network_ids;
+                                restaurant.network_ids = network_ids;
                                 restaurant.markModified('network_ids');
                                 cb(undefined, networks, networkMap);
                             },
                             function saveRestaurant(networks, networkMap, cb) {
                                 console.log('save rest')
-                                restaurant.features.menuJson=restaurant.features.menuJson?true:false;
+                                restaurant.features.menuJson = restaurant.features.menuJson ? true : false;
                                 restaurant.markModified('features');
                                 restaurant.markModified('feature_attributions');
                                 restaurant.save(function (err, restSaveRes) {

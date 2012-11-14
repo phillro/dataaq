@@ -19,7 +19,8 @@ var nameStopWords = require('../../lib/nameStopwords.js'),
     mindex = require('../../lib/mindex.js');
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
-    config_path:['c', 'Config file path.', 'string', '../../etc/conf']
+    config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
+    zip:['z','Zip to reindex','string','all']
 });
 
 cli.main(function (args, options) {
@@ -51,7 +52,14 @@ cli.main(function (args, options) {
         return m_strOut;
     }
 
-    mongooseLayer.models.Scrape.find({'data.name':{$exists:true}, 'data.address':{$exists:true}}, function (err, scrapes) {
+    var query = {'data.name':{$exists:true}, 'data.address':{$exists:true}};
+
+    if(options.zip&&options.zip!='all'){
+       query['data.zip']=options.zip.toString();
+    }
+    console.log(query);
+    mongooseLayer.models.Scrape.find(query, function (err, scrapes) {
+        console.log('found ' + scrapes.length);
         async.forEachLimit(scrapes, 20, function (scrape, forEachCallback) {
             async.waterfall([
                 function createMetaPhones(cb) {
@@ -60,7 +68,7 @@ cli.main(function (args, options) {
 
                     var addrStems = mindex.stem(mindex.stripStopWords(mindex.words(scrape.data.address.toString()), addressStopwords));
                     var addrMetaphones = mindex.metaphoneArray(addrStems);
-                    scrape.data.name=scrape.data.name.replace('Golden UnicornBest of Citysearch Winner','');
+                    scrape.data.name = scrape.data.name.replace('Golden UnicornBest of Citysearch Winner', '');
                     scrape.data.name_meta = {
                         meta_phones:nameMetaphones,
                         stemmed_words:nameStems
@@ -71,8 +79,8 @@ cli.main(function (args, options) {
                         stemmed_words:addrStems
                     }
 
-                    if(scrape.data.phone){
-                        scrape.data.norm_phone=stripAlphaChars(scrape.data.phone);
+                    if (scrape.data.phone) {
+                        scrape.data.norm_phone = stripAlphaChars(scrape.data.phone);
                     }
 
                     scrape.markModified('data');

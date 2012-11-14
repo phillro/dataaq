@@ -100,7 +100,7 @@ cli.main(function (args, options) {
 
     var zones = [
         {
-            find_loc:'10282',
+            find_loc:'10013',
             find_desc:'restaurants'
         }
     ]
@@ -111,8 +111,6 @@ cli.main(function (args, options) {
         nodeio.start(yelpSearchJob, {redisClient:redisClient}, function (err, results) {
             if (err) {
                 console.log(err)
-            } else {
-                console.log(results)
             }
             console.log('Yelp Search  Job Complete')
             process.exit(1);
