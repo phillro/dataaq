@@ -1,12 +1,44 @@
 <h2><%=venue.name%></h2>
 <span><%=venue.addr%>, <%=venue.city%> <%=venue.statecode%>. <%=venue.postal_code%></span>
 
+<div class="networks">
+    <ul>
+        <%for(var i=0;i<venue.network_ids.length;i++){%>
+            <li>
+                <%=venue.network_ids[i].name%>
+            </li>
+        <%}%>
+    </ul>
+</div>
 <div class="features">
     <h3>Features</h3>
     <ul>
+
+        <%
+
+
+
+        %>
         <%for(var f in venue.features){%>
-            <li>
-                <span style="font-weight: bold"><%=f%></span><%=venue.features[f]%>
+            <li style="list-style: none">
+                    <span style="font-weight: bold"><%=f.toUpperCase()%>  </span>
+                    <%if(typeof venue.features[f]=='object'&&f!='menujson'){%>
+                <ul>
+                        <%for(var fN in venue.features[f]){%>
+
+                            <%if(typeof venue.features[f][fN]=='string'){%>
+                                <li>
+                                    <%=venue.features[f][fN]%>
+                                </li>
+                            <%}else{%>
+                                <%=JSON.stringify(venue.features[f][fN])%>
+                            <%}%>
+
+                        <%}%>
+                </ul>
+                    <%}else{%>
+                     <%=venue.features[f]%>
+                    <%}%>
             </li>
         <%}%>
     </ul>
@@ -20,7 +52,7 @@
                 <span><%=venue.reviews[i].dtreviewed%></span>
                 <span><%=venue.reviews[i].attribution.sourceName%></span>
                 <p>
-                <%=venue.reviews[i].content%>
+                <%=JSON.stringify(venue.reviews[i])%>
                 </p>
             </li>
         <%}%>
@@ -35,7 +67,7 @@
     <ul>
         <%for(var i=0;i<venue.ratings.length;i++){%>
             <li>
-                <%=venue.ratings[i].rating%>
+                <%=JSON.stringify(venue.ratings[i])%>
             </li>
         <%}%>
     </ul>

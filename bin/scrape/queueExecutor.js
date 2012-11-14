@@ -22,7 +22,7 @@ cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
     config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
     max:['m', 'Max to run concurrently', 'number', 4],
-    jobqueuename:['q', 'Job queue name', 'string','yepdet']
+    jobqueuename:['q', 'Job queue name', 'string','10013']
 });
 
 cli.main(function (args, options) {

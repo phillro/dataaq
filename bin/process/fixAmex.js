@@ -1,26 +1,27 @@
 var async = require('async'),
     nodeio = require('node.io'),
-    InputQueue = require('../lib/InputQueue').InputQueue,
-    ProxyQueue = require('../lib/ProxyQueue').ProxyQueue,
-    JobQueue = require('../lib/JobQueue').JobQueue;
+    InputQueue = require('../../lib/InputQueue.js').InputQueue,
+    ProxyQueue = require('../../lib/ProxyQueue.js').ProxyQueue,
+    JobQueue = require('../../lib/JobQueue.js').JobQueue;
 
 var cli = require('cli'),
     async = require('async'),
     redis = require('redis'),
     VenueUtil = require('venue-util'),
     nodeio = require('node.io'),
-    InputQueue = require('../lib/InputQueue').InputQueue,
-    ProxyQueue = require('../lib/ProxyQueue').ProxyQueue,
+    InputQueue = require('../../lib/InputQueue.js').InputQueue,
+    ProxyQueue = require('../../lib/ProxyQueue.js').ProxyQueue,
     mongoose = require('mongoose'),
-    JobQueue = require('../lib/JobQueue').JobQueue,
-    Job = require('../lib/JobQueue').Job;
-var nameStopWords = require('../lib/nameStopwords.js'),
-    addressStopwords = require('../lib/addressStopwords.js'),
-    mindex = require('../lib/mindex.js');
+    JobQueue = require('../../lib/JobQueue.js').JobQueue,
+    Job = require('../../lib/JobQueue.js').Job;
+var nameStopWords = require('../../lib/nameStopwords.js'),
+    addressStopwords = require('../../lib/addressStopwords.js'),
+    mindex = require('../../lib/mindex.js');
 
 cli.parse({
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
-    config_path:['c', 'Config file path.', 'string', '../etc/conf']
+    config_path:['c', 'Config file path.', 'string', '../../etc/conf'],
+    zip:['z','Zip to reindex','string','all']
 });
 
 cli.main(function (args, options) {
@@ -72,7 +73,11 @@ cli.main(function (args, options) {
     }
 
     //mongooseLayer.models.RestaurantMerged.find({_id:'4fdb767ee0795a6846ed9f8c'}, function (err, restaurants) {
-    mongooseLayer.models.RestaurantMerged.find({}, function (err, restaurants) {
+    var query={};
+    if(options.zip&&options.zip!='all'){
+           query['postal_code']=options.zip.toString();
+        }
+    mongooseLayer.models.RestaurantMerged.find(query, function (err, restaurants) {
         async.forEachLimit(restaurants, 20, function (restaurant, callback) {
             restaurant.name_meta = restaurant.name ? createMetaObj(restaurant.name, nameStopWords) : null;
             restaurant.addr_meta = restaurant.addr ? createMetaObj(restaurant.addr, addressStopwords) : null;
