@@ -35,10 +35,10 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-    var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280', '10282'];
+    var zips = ['10014','10003','10011','10004','10009','10002','10038','10005','10282','10013','10280','10282'];
 
     var query = {
-        locationId:{$exists:false},
+        //locationId:{$exists:false},
         'data.name':{$exists:true},
         'data.address':{$exists:true},
         'data.city':{$exists:true},
@@ -67,10 +67,11 @@ cli.main(function (args, options) {
     var pageSize = 500;
 
     function getScrapes(start, num, cb) {
-        mongooseLayer.models.Scrape.find(query, {}, {skip:start, limit:num}, function (err, scrapes) {
+        mongooseLayer.models.Scrape.find(query, {}, {skip:start, limit:num,sort:{updatedAt:1}}, function (err, scrapes) {
             cb(err, scrapes);
         });
     }
+
 
     function handleScrapes(scrapes, handleScrapesCb) {
         async.forEachSeries(scrapes, function (scrape, forEachScrapeCb) {
@@ -123,6 +124,9 @@ cli.main(function (args, options) {
                         }
                         created++;
                         newRestaurant.save(function (err, newRestaurant) {
+                            if(newRestaurant){
+                                console.log(newRestaurant._id.toString()+' created.');
+                            }
                             cb(err, scrape, newRestaurant, reason);
                         })
                     } else {
@@ -131,6 +135,7 @@ cli.main(function (args, options) {
                 },
                 function updateScrape(scrape, restaurant, reason, cb) {
                     if (restaurant) {
+                        console.log('paired '+restaurant._id);
                         scrape.locationId = restaurant._id;
                         scrape.pair_reason = reason;
                         scrape.created_restaurant_id = restaurant._id;
@@ -155,6 +160,7 @@ cli.main(function (args, options) {
     }
 
     mongooseLayer.models.Scrape.count(query, function (err, total) {
+        console.log(query);
         console.log(total + ' to pair/create.');
         async.whilst(function () {
             return done <= total;

@@ -35,7 +35,10 @@
         "natural":">0.0.1",
         "foursquarevenues":"git+ssh://git@github.com:phillro/4square.git",
         "express":"2.5.8",
-        "ejs":">0.0.1"
+        "ejs":">0.0.1",
+        "ordrin-schemas":"git+ssh://git@github.com:ordrin/ordrin-schemas.git",
+        
+
     }
 
 }
