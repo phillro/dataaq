@@ -1,0 +1,22 @@
+<%
+
+  var fields = ['name'];
+%>
+<h2><%=scrape.data.name%></h2>
+
+
+
+<ul>
+
+    <%for(var f in scrape.data){%>
+
+    <li>
+                <span style="font-weight: bold"><%=f%></span>
+                <%if(typeof scrape.data[f]=='string'){%>
+                    <%=scrape.data[f]%>
+                <%}else{%>
+                    <%=JSON.stringify(scrape.data[f])%>
+                <%}%>
+            </li>
+        <%}%>
+</ul>

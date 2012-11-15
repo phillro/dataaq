@@ -5,7 +5,7 @@
     <ul>
         <%for(var i=0;i<venue.network_ids.length;i++){%>
             <li>
-                <%=venue.network_ids[i].name%>
+                <a href="/scrape/show/<%=venue.network_ids[i].id%>"><%=venue.network_ids[i].name%></a>
             </li>
         <%}%>
     </ul>

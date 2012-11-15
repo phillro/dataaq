@@ -41,7 +41,8 @@ cli.main(function (args, options) {
             if (!conf) {
                 throw 'Config file not found';
             }
-            var zips = ['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', '10280','10282'];
+            var zips = ['10014','10003','10011','10004','10009','10002','10038','10005','10282','10013','10280','10282'];
+
             var query = {name:{$exists:true}, name_meta:{$exists:true}, postal_code:{$in:zips},excluded:{$ne:true}};
             //var query = {_id:'4fdb6803e0795a6846e3a73a',excluded:{$ne:true}};
 console.log(query);

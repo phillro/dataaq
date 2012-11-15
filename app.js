@@ -42,10 +42,20 @@ cli.main(function (args, options) {
         app.use(express.bodyParser());
     });
 
-    app.all('*',function (req, res, next) {
+    app.all('*', function (req, res, next) {
         req.models = mongooseLayer.models;
         req.redisClient = redisClient;
         next();
+    })
+
+    app.get('/scrape/show/:id', function (req, res) {
+        req.models.Scrape.findById(req.params.id, function (err, scrape) {
+            if (err) {
+                res.send({err:err.toString()});
+            } else {
+                res.render('scrape',{scrape:scrape});
+            }
+        })
     })
 
     app.get('/ven/show/:id', function (req, res) {
@@ -54,7 +64,7 @@ cli.main(function (args, options) {
                 res.send({err:err.toString()});
             } else {
                 if (rest) {
-                    res.render('show',{venue:rest});
+                    res.render('show', {venue:rest});
                 }
                 else {
                     res.send({err:'Not found'});
@@ -66,18 +76,18 @@ cli.main(function (args, options) {
     app.get('/ven/list', function (req, res) {
         var start = req.query.next || 0;
         var limit = req.query.limit || 20;
-        var onlyenabled = req.query.onlyenabled == 'true' ? true :false;
-        var excluded = req.query.excluded == 'true' ? true :false;
-        start=parseFloat(start);
-        limit=parseFloat(limit);
+        var onlyenabled = req.query.onlyenabled == 'true' ? true : false;
+        var excluded = req.query.excluded == 'true' ? true : false;
+        start = parseFloat(start);
+        limit = parseFloat(limit);
         var query = {};
-        if(onlyenabled){
-            query.enabled=onlyenabled;
+        if (onlyenabled) {
+            query.enabled = onlyenabled;
         }
-        if(excluded){
-            query.excluded=excluded;
+        if (excluded) {
+            query.excluded = excluded;
         }
-        req.models.RestaurantMerged.find(query,{}, {skip:start, limit:limit,sort:{feature_count:-1}}, function (err, venues) {
+        req.models.RestaurantMerged.find(query, {}, {skip:start, limit:limit, sort:{feature_count:-1}}, function (err, venues) {
             if (err) {
                 res.send({err:err.toStrin()});
             } else {
@@ -86,7 +96,7 @@ cli.main(function (args, options) {
                     for (var i = 0; i < venues.length; i++) {
                         out.push(venues[i]._doc);
                     }
-                    res.render('list',{venues:venues,prev:start-limit,next:start+limit,limit:limit});
+                    res.render('list', {venues:venues, prev:start - limit, next:start + limit, limit:limit});
                     //res.send({restaurants:out});
                 }
                 else {

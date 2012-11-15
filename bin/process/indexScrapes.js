@@ -52,7 +52,8 @@ cli.main(function (args, options) {
         return m_strOut;
     }
 
-    var query = {'data.name':{$exists:true}, 'data.address':{$exists:true}};
+    var zips = ['10014','10003','10011','10004','10009','10002','10038','10005','10280','10282','10013'];
+    var query = {'data.zip':{$in:zips},'data.name':{$exists:true}, 'data.address':{$exists:true}};
 
     if(options.zip&&options.zip!='all'){
        query['data.zip']=options.zip.toString();
