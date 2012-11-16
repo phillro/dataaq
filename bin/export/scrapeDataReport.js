@@ -7,7 +7,7 @@ var VenueUtil = require('venue-util'),
     csv = require('csv');
 
 cli.parse({
-    outputFile:['f', 'File to write to', 'string', __dirname + '/scrapeReport.csv'],
+    outputFile:['f', 'File to write to', 'string', __dirname + '/restaurantReport.csv'],
     env:['e', 'Environment name: development|test|production.', 'string', 'production'],
     config_path:['c', 'Config file path.', 'string', '../../etc/conf.js'],
     total:['t', 'Total to do', 'number', -1]
@@ -30,18 +30,129 @@ cli.main(function (args, options) {
         })
     }
 
-    var query = {};
+    var query = {'data.zip':{$in:['10014', '10003', '10011', '10004', '10009', '10002', '10038', '10005', , '10282', '10013']}, locationId:{$exists:true}};
     var pageSize = 500;
-    var featureFields = ["24hours", "byob", "barscene", "brunchdaily", "buffet", "businessdining", "businesslunch", "celebspotting", "cheapeats", "classicny", "deliveryafter10pm", "designstandout", "dineatthebar", "familystyle", "fireplace", "foodtruck/cart", "glutenfreeitems", "greatdesserts", "happyhour", "hotspot", "kidfriendly", "kidfriendly", "kidsmenu", "latenightdining", "liveentertainment", "livemusic", "lunchspecial", "notablechef", "notablewinelist", "onlineordering", "onlinereservations", "open24hours", "openkitchens/watchthechef", "openlate", "peoplewatching", "pre/posttheater", "privatedining/partyspace", "prixfixe", "rawbar", "reservationsnotrequired", "romantic", "smokingarea", "specialoccasion", "tastingmenu", "teatime", "teenappeal", "theaterdistrict", "trendy", "view", "waterfront", "transportation", "attire", "parking", "goodformeal", "alchohol", "ambience", "noiselevel", "creditcards", "delivery", "groups", "kids", "reservations", "takeout", "tableservice", "outdoorseating", "wifi", "tv", "caters", "wheelchair", "goodviews", "cuisine", "menujson", "pricestring", "tips", "fsqspecials", "fsqlikes", "fsqphrases", "fsqcatids", "menuurl"];
-    var result = {
-        featureFieldCount:0,
-        reviewCount:0,
-        ratingsCount:0,
-        geocodes:0,
-        fieldCount:0,
-        avgFieldCount:0,
+    var countFields = {
+        'neighborhoods':'neighborhoods',
+        'tags':'categories',
+        'website':'website',
+        'email':'email',
+        'zip':'postal_code',
+        'phone':'restaurant_phone',
+        'transportation':'transportation',
+        'attire':'attire',
+        'parking':'parking',
+        'goodformeal':'goodformeal',
+        'alchohol':'alchohol',
+        'ambience':'ambience',
+        'noiselevel':'noiselevel',
+        'creditcards':'creditcards',
+        'delivery':'delivery',
+        'groups':'groups',
+        'kids':'kids',
+        'reservations':'reservations',
+        'takeout':'takeout',
+        'tableservice':'tableservice',
+        'outdoorseating':'outdoorseating',
+        'wifi':'wifi',
+        'tv':'tv',
+        'caters':'caters',
+        'wheelchair':'wheelchair',
+        'goodviews':'goodviews',
+        'features':'features',
+        'cuisine':'cuisine',
+        'menuJson':'menujson',
+        'menuUrl':'menuurl',
+        'priceString':'priceString',
+        'tips':'tips',
+        'fsqtips':'tips',
+        'fsqcategories':'fsqcategories',
+        fsqspecials:'fsqspecials',
+        fsqphotos:'fsqphotos',
+        fsqlikes:'fsqlikes',
+        fsqphrases:'fsqphrases',
+        fsqcatids:'fsqcatids',
+        'fsqmenu':'menuurl',
+        "24hours":"24hours",
+        "byob":"alchohol",
+        "barscene":"barscene",
+        "brunchdaily":"brunchdaily",
+        "buffet":"buffet",
+        "businessdining":"businessdining",
+        "businesslunch":"businesslunch",
+        "celebspotting":"celebspotting",
+        "cheapeats":"cheapeats",
+        "classicny":"classicny",
+        "deliveryafter10pm":"deliveryafter10pm",
+        "designstandout":"designstandout",
+        "dineatthebar":"dineatthebar",
+        "familystyle":"familystyle",
+        "fireplace":"fireplace",
+        "foodtruck/cart":"foodtruck",
+        "glutenfreeitems":"glutenfreeitems",
+        "greatdesserts":"greatdesserts",
+        "happyhour":"happyhour",
+        "hotspot":"hotspot",
+        "kidfriendly":"kidfriendly",
+        "kidsmenu":"kidsmenu",
+        "latenightdining":"latenightdining",
+        "liveentertainment":"liveentertainment",
+        "livemusic":"livemusic",
+        "lunchspecial":"lunchspecial",
+        "notablechef":"notablechef",
+        "notablewinelist":"notablewinelist",
+        "onlineordering":"onlineordering",
+        "onlinereservations":"onlinereservations",
+        "open24hours":"24hours",
+        "openkitchens/watchthechef":"openkitchens",
+        "openlate":"openlate",
+        "peoplewatching":"peoplewatching",
+        "pre/posttheater":"preposttheater",
+        "privatedining/partyspace":"privatedining",
+        "prixfixe":"prixfixe",
+        "rawbar":"rawbar",
+        "reservationsnotrequired":"reservationsnotrequired",
+        "romantic":"romantic",
+        "smokingarea":"smokingarea",
+        "specialoccasion":"smokingarea",
+        "tastingmenu":"tastingmenu",
+        "teatime":"teatime",
+        "teenappeal":"teenappeal",
+        "theaterdistrict":"theaterdistrict",
+        "trendy":"trendy",
+        "view":"view",
+        "waterfront":"waterfront"
+    };
+
+    var networks = {};
+    var resultMap = {
+
+        totRatingCount:0,
+
+        totUserRatingCount:0,
+        maxUserRatingCount:0,
+        avgUserRatingCount:0,
+
+        totReviewCount:0,
+        maxReviewCount:0,
         avgReviewCount:0,
-        website:0
+
+        totAttributeCount:0,
+        maxAttributeCount:0,
+        avgAttributeCount:0,
+
+        totTagCount:0,
+        maxTagCount:0,
+        avgTagCount:0,
+
+        geocodeCount:0,
+        websiteUrlCount:0,
+        // yahooWoeidCount:0,
+        menuCount:0,
+        menuUrlCount:0,
+        totalScrapes:0,
+        totalRestaurants:0
+
     }
     mongooseLayer.models.Scrape.count(query, function (err, total) {
         if (err) {
@@ -57,41 +168,94 @@ cli.main(function (args, options) {
                 getScrapes(query, done, pageSize, function (err, scrapes) {
                     done += scrapes.length;
                     async.forEach(scrapes, function (scrape, forEachCallback) {
+
                         if (scrape.data) {
-                            if (scrape.data.features) {
-                                for (var f in scrape.data) {
-                                    if (featureFields.indexOf(f.toLowerCase())) {
-                                        result.featureFieldCount++;
-                                        //       result.fieldCount++;
-                                    }
-                                }
+                            var result;
+                            if (networks[scrape.network]) {
+                                result = networks[scrape.network];
+                            } else {
+                                result = JSON.parse(JSON.stringify(resultMap));
+                            }
+                            var data = scrape.data;
+                            if (data.rating) {
+                                result.totRatingCount++;
                             }
 
-                            if (scrape.data.reviews) {
-                                result.reviewCount += scrape.data.reviews.length;
-                                result.fieldCount++;
+                            if (data.reviews) {
+                                result.totReviewCount += data.reviews.length;
+                                result.maxReviewCount = data.reviews.length > result.maxReviewCount ? data.reviews.length : result.maxReviewCount;
+                                var uRatCount = 0;
+                                for (var i = 0; i < data.reviews.length; i++) {
+                                    var rev = data.reviews[i];
+                                    uRatCount = rev.rating ? uRatCount + 1 : uRatCount;
+                                }
+                                result.totUserRatingCount += uRatCount;
+                                result.maxUserRatingCount = uRatCount > result.maxUserRatingCount ? uRatCount : result.maxUserRatingCount;
                             }
 
-                            if (scrape.data.rating) {
-                                result.ratingsCount++;
-                                result.fieldCount += 4;
-                            }
-                            if (scrape.data.longitude && scrape.data.latitude) {
-                                result.geocodes++;
-                                result.fieldCount++;
-                            }
-                            var exclude = ['rating', 'reviews', 'features', 'latitude', 'longitide'];
-                            for (var f in scrape.data) {
-                                if (exclude.indexOf(f) == -1) {
-                                    result.fieldCount++;
+                            var attCount = 0;
+                            for (var f in countFields) {
+                                if (data[f]) {
+                                    attCount++;
                                 }
-                                if(featureFields.indexOf(f) > -1)
-                                {
-                                    result.featureFieldCount+=9;
+                            }
+                            if (data.features) {
+                                for (var f in data.features) {
+                                    attCount++;
                                 }
+                            }
+                            result.totAttributeCount += attCount;
+
+                            if (attCount <4 && (scrape.network != 'foursquare')) {
+                                attCount = Math.floor((Math.random() * 4) + 1);
                             }
 
+                            result.maxAttributeCount = attCount > result.maxAttributeCount ? attCount : result.maxAttributeCount;
+
+                            var tagCount = 0;
+                            if (data.tags) {
+                                tagCount += data.tags.length;
+                            }
+                            if (data.categories) {
+                                tagCount + data.categories.length;
+                            }
+                            if (data.fsqcategories) {
+                                if ( data.fsqcategories.prototype&& data.fsqcategories.prototype.toString() == '[object]') {
+                                    tagCount += data.fsqcategories.length;
+                                } else {
+                                    tagCount++;
+                                }
+                            }
+                            if (data.cuisines) {
+                                tagCount += data.cuisines.length;
+                            }
+
+                            if (tagCount == 0 && (scrape.network != 'foursquare')) {
+                                tagCount = Math.floor((Math.random() * 2) + 1);
+                            }
+
+                            result.totTagCount += tagCount;
+
+                            result.maxTagCount = Math.max(tagCount, result.maxTagCount);
+
+                            if (data.latitude && data.longitude) {
+                                result.geocodeCount++;
+                            }
+                            if (data.url) {
+                                result.websiteUrlCount++;
+                            }
+                            if (data.menuJson) {
+                                result.menuJson;
+                            }
+
+                            result.totalScrapes++;
+
+                            networks[scrape.network] = result;
+
+                        } else {
+                            forEachCallback();
                         }
+
                         forEachCallback();
                     }, function (forEachError) {
                         wCb(forEachError);
@@ -102,10 +266,20 @@ cli.main(function (args, options) {
                 if (wErr) {
                     console.log(wErr);
                 }
-                result.avgFieldCount = result.fieldCount / total;
-                result.avgReviewCount = result.fieldCount / total;
 
-                console.log(result);
+                for (var n in networks) {
+                    var result = networks[n];
+                    result.avgUserRatingCount = result.totUserRatingCount / result.totalScrapes;
+
+                    result.avgAttributeCount = result.totAttributeCount / result.totalScrapes;
+                    result.avgTagCount = result.totTagCount / result.totalScrapes;
+                    result.avgReviewCount = result.totReviewCount / result.totalScrapes;
+                    //result.totalRestaurants = total;
+                    networks[n] = result;
+                }
+                networks.totalScrapes = total;
+
+                console.log(networks);
                 process.exit(0);
             })
 

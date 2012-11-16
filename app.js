@@ -59,11 +59,13 @@ cli.main(function (args, options) {
     })
 
     app.get('/ven/show/:id', function (req, res) {
+
         req.models.RestaurantMerged.findById(req.params.id, function (err, rest) {
             if (err) {
                 res.send({err:err.toString()});
             } else {
                 if (rest) {
+
                     res.render('show', {venue:rest});
                 }
                 else {

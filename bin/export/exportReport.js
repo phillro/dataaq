@@ -54,6 +54,7 @@ cli.main(function (args, options) {
             'dupe ids'
         ];
         var rows = [headerRow];
+
         async.waterfall([
             function getRestaurants(cb) {
                 mongooseLayer.models.RestaurantMerged.find({closed:{$ne:true},excluded:{$ne:true}}, fields,

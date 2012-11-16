@@ -1,5 +1,24 @@
 <h2><%=venue.name%></h2>
-<span><%=venue.addr%>, <%=venue.city%> <%=venue.statecode%>. <%=venue.postal_code%></span>
+<span><%=venue.addr%>, <%=venue.city%> <%=venue.statecode%>. <%=venue.postal_code%></span><br>
+<span style="font-weight: bold">address 2</span> <span><%=venue.addr2%></span><br>
+<span style="font-weight: bold">cross street</span> <span><%=venue.cross_street%></span><br>
+<span style="font-weight: bold">state</span> <span><%=venue.state%></span><br>
+<span style="font-weight: bold">country</span> <span><%=venue.country%></span><br>
+<span style="font-weight: bold">country_code</span> <span><%=venue.country_code%></span><br>
+<span style="font-weight: bold">county</span> <span><%=venue.county%></span><br>
+<span style="font-weight: bold">county_code</span> <span><%=venue.county_code%></span><br>
+<span style="font-weight: bold">geo</span> <span><%=venue.geo?JSON.stringify(venue.geo):''%></span><br>
+</span>
+
+<span><%=venue.restaurant_phone%></span><br>
+<span><%=venue.website%></span><br>
+<span><%=venue.email%></span><br>
+<span style="font-weight: bold">Tag Count</span> <span><%=venue.tags_count%></span><br>
+<span style="font-weight: bold">Attribute Count</span> <span><%=venue.attributes_count%></span><br>
+<span style="font-weight: bold">Reviews Count</span> <span><%=venue.reviews_count%></span><br>
+<span style="font-weight: bold">Aggregate Ratings Count</span> <span><%=venue.ratings_count%></span><br>
+<span style="font-weight: bold">Average User Rating</span> <span><%=venue.average_user_rating%></span><br>
+<span style="font-weight: bold">User Ratings Count</span> <span><%=venue.user_ratings_count%></span><br>
 
 <div class="networks">
     <ul>
@@ -10,8 +29,8 @@
         <%}%>
     </ul>
 </div>
-<div class="features">
-    <h3>Features</h3>
+<div class="attributes">
+    <h3>Attributes</h3>
     <ul>
 
         <%
@@ -19,30 +38,64 @@
 
 
         %>
-        <%for(var f in venue.features){%>
+        <%for(var f in venue.attributes){%>
             <li style="list-style: none">
                     <span style="font-weight: bold"><%=f.toUpperCase()%>  </span>
-                    <%if(typeof venue.features[f]=='object'&&f!='menujson'){%>
+                    <%if(typeof venue.attributes[f]=='object'&&f!='menujson'){%>
                 <ul>
-                        <%for(var fN in venue.features[f]){%>
+                        <%for(var fN in venue.attributes[f]){%>
 
-                            <%if(typeof venue.features[f][fN]=='string'){%>
+                            <%if(typeof venue.attributes[f][fN]=='string'){%>
                                 <li>
-                                    <%=venue.features[f][fN]%>
+                                    <%=venue.attributes[f][fN]%>
                                 </li>
                             <%}else{%>
-                                <%=JSON.stringify(venue.features[f][fN])%>
+                                <%=JSON.stringify(venue.attributes[f][fN])%>
                             <%}%>
 
                         <%}%>
                 </ul>
                     <%}else{%>
-                     <%=venue.features[f]%>
+                     <%=venue.attributes[f]%>
                     <%}%>
             </li>
         <%}%>
     </ul>
 </div>
+
+<div class="tags">
+    <h3>tags</h3>
+    <ul>
+
+        <%
+
+
+
+        %>
+        <%for(var f in venue.tags){%>
+            <li style="list-style: none">
+                    <span style="font-weight: bold"><%=f.toUpperCase()%>  </span>
+                    <%if(typeof venue.tags[f]=='object'&&f!='menujson'){%>
+                <ul>
+                        <%for(var fN in venue.tags[f]){%>
+
+                            <%if(typeof venue.tags[f][fN]=='string'){%>
+                                <li>
+                                    <%=venue.tags[f][fN]%>
+                                </li>
+                            <%}else{%>
+                                <%=JSON.stringify(venue.tags[f][fN])%>
+                            <%}%>
+
+                        <%}%>
+                </ul>
+                    <%}else{%>
+                     <%=venue.tags[f]%>
+                    <%}%>
+            </li>
+        <%}%>
+    </ul>
+</div>        
 
 <div class="reviews">
     <h3>Reviews</h3>
