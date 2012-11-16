@@ -33,8 +33,7 @@ cli.main(function (args, options) {
     }
 
     var redisClient = redis.createClient(conf.redis.port, conf.redis.host);
-    var network='citysearch';
-    var jobQueue = new JobQueue(network+'details3', {redisClient:redisClient})
+    var jobQueue = new JobQueue('insiderpagesdetails', {redisClient:redisClient})
 
     var ordrinMongoConnectionString = 'mongodb://' + conf.mongo.user + ':' + conf.mongo.password + '@' + conf.mongo.host + ':' + conf.mongo.port + '/' + conf.mongo.db
     var dbConn = mongoose.createConnection(ordrinMongoConnectionString);
@@ -43,23 +42,15 @@ cli.main(function (args, options) {
         "RestaurantMerged":"amex_venues"
     }});
 
-
-
-    var zips = ['10280', '10005', '10038', '10002', '10009', '10004', '10011', '10003', '10014'];
-    mongooseLayer.models.Scrape.find({network:'citysearch','data.zip':{$in:zips}}, function (err, scrapes) {
-    //mongooseLayer.models.Scrape.find({_id:'509ede106a7d96211b000b5e'}, function (err, scrapes) {
-        async.forEach(scrapes, function (scrape, callback) {
-            /*var url = scrape.data.url.replace('/listings/restaurant/','/urr/listings/restaurant/').replace('index.html','')+'?sort=recent';
-            url=url.replace('/pages/nymag/','http://')
-            var processor = 'ReviewProcessor';
-            console.log(url);*/
-            var processor = 'DetailProcessor';
-            url= scrape.data.url.replace('/pages/nymag/','http://');
-            var detailsJob = new Job(network, network+'details', {input:[url], scrapeId:scrape._id.toString()}, 'cli');
-            detailsJob.processorMethods = 'networks/'+network+'/'+processor;
-            detailsJob.baseJob = 'networks/internal/defaultPageScraper';
-            jobQueue.push(detailsJob, callback);
-
+    mongooseLayer.models.RestaurantMerged.find({'name_meta.meta_phones':{$in:['STSRKSH', 'WNR']}}, function (err, rests) {
+        async.forEachLimit(rests, 20, function (rest, callback) {
+            if(rest.name.indexOf('Best of Citysearch Winner')>-1){
+                console.log('found cs w')
+                rest.name=rest.name.replace('Best of Citysearch Winner','');
+                rest.save(callback);
+            }else{
+                callback();
+            }
         }, function (forEachError) {
             if (err) {
                 console.log(err);
