@@ -64,6 +64,9 @@ cli.main(function (args, options) {
         maxAttributeCount:0,
         avgAttributeCount:0,
 
+        totTagValueCount:0,
+        avgTagValueCount:0,
+
         totTagCount:0,
         maxTagCount:0,
         avgTagCount:0,
@@ -89,6 +92,7 @@ cli.main(function (args, options) {
                 getRestaurants(query, done, pageSize, function (err, rests) {
                     done += rests.length;
                     async.forEach(rests, function (rest, forEachCallback) {
+
 
                         if (rest.ratings) {
                             result.totRatingCount += rest.ratings.length;

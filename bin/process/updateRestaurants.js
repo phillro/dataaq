@@ -35,7 +35,8 @@ cli.main(function (args, options) {
         }});
 
         var attributedFields = {
-
+//FIELD NAME IS THE SCRAPE.DATA.FIELDNAME
+//VALUE IS THE TARGET FIELD
             "onlinereservations":"onlinereservations",
             "open24hours":"24hours",
             "openkitchens/watchthechef":"openkitchens",
