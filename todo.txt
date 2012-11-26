@@ -5,4 +5,3 @@ Todo:
 (3) Placefinder should be updated for all fields to make consistent
 (4) Dead fields (de_dupe_*, features) should be removed
 (5) Website field should be moved out of tags into the topline data
-(6) 
