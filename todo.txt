@@ -1,0 +1,7 @@
+Todo:
+
+(1) Field names must be made consistent. Camel case fields should all be made to use underscore format
+(2) Foursquare fields should be moved out of the topline into another field. Tags/Attributes don't seem appropriate though
+(3) Placefinder should be updated for all fields to make consistent
+(4) Dead fields (de_dupe_*, features) should be removed
+(5) Website field should be moved out of tags into the topline data
