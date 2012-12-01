@@ -12,9 +12,9 @@ module.exports = {
         },
 
         mongo:{
-          'user':'',
-          'password':'',
-          'db':'venues',
+          'user':'mvenues',
+          'password':'mv1us3r',
+          'db':'manhattan_venues',
           'port':27017,
           'host':'localhost',
           "model_collection_mapping":{
