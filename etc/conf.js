@@ -24,8 +24,8 @@ module.exports = {
         },
         jobRoot:__dirname + '/../lib/jobs/',
         aws:{
-            accessKey:'AKIAJBMQ5STR5HGIHD4Q',
-            secretAccessKey:'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'
+            accessKey:'***',
+            secretAccessKey:'******'
         },
 
 
